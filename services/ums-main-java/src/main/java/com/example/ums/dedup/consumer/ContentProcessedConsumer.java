@@ -2,7 +2,6 @@ package com.example.ums.dedup.consumer;
 
 import com.example.ums.config.RabbitMqConfig;
 import com.example.ums.dedup.service.DuplicationService;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

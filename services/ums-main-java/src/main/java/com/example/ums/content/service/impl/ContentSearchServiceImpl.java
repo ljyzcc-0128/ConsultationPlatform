@@ -15,10 +15,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 内容搜索与关联服务实现。
@@ -35,8 +33,8 @@ public class ContentSearchServiceImpl implements ContentSearchService {
     private final ObjectMapper objectMapper;
 
     public ContentSearchServiceImpl(NewsMapper newsMapper,
-                                    ChangeEventMapper changeEventMapper,
-                                    ObjectMapper objectMapper) {
+            ChangeEventMapper changeEventMapper,
+            ObjectMapper objectMapper) {
         this.newsMapper = newsMapper;
         this.changeEventMapper = changeEventMapper;
         this.objectMapper = objectMapper;
@@ -57,7 +55,7 @@ public class ContentSearchServiceImpl implements ContentSearchService {
             CursorCodec.Cursor c = CursorCodec.decode(cursor);
             wrapper.and(w -> w.lt(CpNews::getPublishDate, c.publishDate())
                     .or(w2 -> w2.eq(CpNews::getPublishDate, c.publishDate())
-                                .lt(CpNews::getArticleId, c.articleId())));
+                            .lt(CpNews::getArticleId, c.articleId())));
         }
 
         List<CpNews> rows = newsMapper.selectList(wrapper.last("LIMIT " + (pageSize + 1)));
@@ -67,7 +65,7 @@ public class ContentSearchServiceImpl implements ContentSearchService {
         List<NewsListItemDto> items = page.stream().map(this::toListItem).toList();
         String nextCursor = hasMore && !page.isEmpty()
                 ? CursorCodec.encode(page.get(page.size() - 1).getPublishDate(),
-                                     page.get(page.size() - 1).getArticleId())
+                        page.get(page.size() - 1).getArticleId())
                 : null;
         return new NewsPageDto(items, nextCursor, hasMore);
     }
@@ -141,7 +139,8 @@ public class ContentSearchServiceImpl implements ContentSearchService {
             return null;
         }
         try {
-            return objectMapper.readValue(categoryJson, new TypeReference<List<String>>() {});
+            return objectMapper.readValue(categoryJson, new TypeReference<List<String>>() {
+            });
         } catch (Exception e) {
             return null;
         }

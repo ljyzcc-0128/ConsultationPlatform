@@ -12,7 +12,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +32,8 @@ public class AdminDlqServiceImpl implements AdminDlqService {
             RabbitMqConfig.QUEUE_CONTENT_PROCESSED_DLQ, RabbitMqConfig.ROUTING_CONTENT_PROCESSED);
 
     private static final int REQUEUE_BATCH_MAX = 500;
-    private static final ParameterizedTypeReference<List<Map<String, Object>>> MAP_LIST =
-            new ParameterizedTypeReference<>() {
-            };
+    private static final ParameterizedTypeReference<List<Map<String, Object>>> MAP_LIST = new ParameterizedTypeReference<>() {
+    };
 
     private final RabbitTemplate rabbitTemplate;
     private final String mgmtBaseUrl;
@@ -44,9 +42,9 @@ public class AdminDlqServiceImpl implements AdminDlqService {
     private final RestClient restClient = RestClient.create();
 
     public AdminDlqServiceImpl(RabbitTemplate rabbitTemplate,
-                               @Value("${ums.mgmt.base-url:http://127.0.0.1:15672}") String mgmtBaseUrl,
-                               @Value("${ums.mgmt.user:ums_admin}") String mgmtUser,
-                               @Value("${ums.mgmt.password:}") String mgmtPassword) {
+            @Value("${ums.mgmt.base-url:http://127.0.0.1:15672}") String mgmtBaseUrl,
+            @Value("${ums.mgmt.user:ums_admin}") String mgmtUser,
+            @Value("${ums.mgmt.password:}") String mgmtPassword) {
         this.rabbitTemplate = rabbitTemplate;
         this.mgmtBaseUrl = mgmtBaseUrl;
         this.mgmtUser = mgmtUser;
@@ -101,7 +99,8 @@ public class AdminDlqServiceImpl implements AdminDlqService {
         List<Map<String, Object>> dead = auth(restClient.post()
                 .uri(mgmtBaseUrl + "/api/queues/%2F/" + queue + "/get")
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("count", REQUEUE_BATCH_MAX, "ackmode", "ack_requeue_false", "encoding", "auto", "truncate", 50000)))
+                .body(Map.of("count", REQUEUE_BATCH_MAX, "ackmode", "ack_requeue_false", "encoding", "auto", "truncate",
+                        50000)))
                 .retrieve().body(MAP_LIST);
         if (dead == null || dead.isEmpty()) {
             return 0;
