@@ -1,0 +1,42 @@
+# INT-02 Energy-Storage.news（P0，优先级3）
+# 勘察结论（2026-09-18）：WordPress/Elementor 架构，列表项为 h2/h3 内绝对链接，
+# 详情 h1 + time[datetime] 可直接取发布时间；与需求清单中"Energy Storage News"为同一信源，
+# source_code 只建一个（手册第九节备注）。
+source_code: INT-02
+source_name: Energy-Storage.news
+fetch_method: WEB
+entry_url: https://www.energy-storage.news/category/news/
+language: en
+pagination: true
+max_pages: 2
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'h2, h3'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+exclude_link_patterns:
+  - '/category/'
+  - 'newsletter'
+  - 'premium'
+  - '/tag/'
+  - '/author/'
+  - '/events/'
+next_page_selectors:
+  - 'a[rel="next"]::attr(href)'
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div.elementor-widget-theme-post-content ::text'
+  - 'div.post__content ::text'
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+  - '.post-author a::text'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

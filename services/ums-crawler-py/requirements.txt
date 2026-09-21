@@ -1,0 +1,21 @@
+# ums-crawler 依赖（手册第二节技术栈 + 第十节：锁定版本避免环境漂移）
+httpx>=0.28
+parsel>=1.11
+aiolimiter>=1.3
+tenacity>=9.0
+aio-pika>=10.0
+trafilatura>=2.2
+dateparser>=1.4
+PyYAML>=6.0
+langdetect>=1.0.9
+playwright>=1.40        # 仅 INT-03 等 JS 渲染信源需要，浏览器需单独 playwright install chromium
+
+# 触发接口
+fastapi>=0.115
+uvicorn>=0.30
+pydantic>=2.7
+
+# 测试
+pytest>=8.0
+pytest-asyncio>=0.24
+pytest-httpx>=0.30

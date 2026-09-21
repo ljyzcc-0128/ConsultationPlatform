@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: ums-main
+
+  # ---------- MySQL（cp_ 前缀库，Flyway 启动时自动迁移） ----------
+  datasource:
+    # 本地开发默认值写在占位符里，生产用环境变量覆盖，避免明文密码入配置
+    url: jdbc:mysql://${UMS_MYSQL_HOST:127.0.0.1}:${UMS_MYSQL_PORT:3306}/${UMS_MYSQL_DB:cp_news}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${UMS_MYSQL_USER:root}
+    password: ${UMS_MYSQL_PASSWORD:root1234}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  # ---------- RabbitMQ（与 ums-crawler 共用 exchange：ums） ----------
+  rabbitmq:
+    host: ${UMS_MQ_HOST:127.0.0.1}
+    port: ${UMS_MQ_PORT:5672}
+    username: ${UMS_MQ_USER:ums_admin}
+    password: ${UMS_MQ_PASSWORD:1eAODIRLqpRazsxV}
+    virtual-host: /
+    listener:
+      simple:
+        # 消费成功 ack、抛异常 nack；配合 default-requeue-rejected=false 进死信
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        # 本地重试 3 次（指数退避 1s→2s→4s），超限后 reject 进 DLQ（实现指南 2.2）
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+          multiplier: 2
+          max-interval: 10000
+
+server:
+  port: 8080
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+# ---------- AI 加工（智谱 GLM，OpenAI 兼容协议；key 只走环境变量，不入仓库） ----------
+ums:
+  ai:
+    enabled: ${UMS_AI_ENABLED:true}
+    api-key: ${UMS_AI_API_KEY:}
+    base-url: ${UMS_AI_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
+    model: ${UMS_AI_MODEL:glm-4-flash}
+    timeout-seconds: 60
+
+  # ---------- 安全与鉴权（JWT + RBAC；SSO 可插拔） ----------
+  security:
+    jwt:
+      secret: ${UMS_JWT_SECRET:dev-only-secret-change-me-in-production-32bytes}
+      ttl-minutes: ${UMS_JWT_TTL_MINUTES:480}
+    default-provider: ${UMS_AUTH_PROVIDER:LOCAL}
+    # ---------- IAM（身份与访问管理，API 调用模式，公司接入时启用） ----------
+    iam:
+      enabled: ${UMS_IAM_ENABLED:false}
+      auth-api-url: ${UMS_IAM_AUTH_API_URL:}         # IAM 认证 API 地址（POST 用户名密码）
+      auth-mode: ${UMS_IAM_AUTH_MODE:API_KEY}         # API_KEY | BEARER | NONE
+      api-key: ${UMS_IAM_API_KEY:}                    # 当 auth-mode=API_KEY 时使用
+      bearer-token: ${UMS_IAM_BEARER_TOKEN:}          # 当 auth-mode=BEARER 时使用
+      timeout-seconds: ${UMS_IAM_TIMEOUT_SECONDS:10}
+      auto-provision: ${UMS_IAM_AUTO_PROVISION:true}  # 首次 IAM 登录自动创建 cp_user
+      default-roles: ${UMS_IAM_DEFAULT_ROLES:USER}     # 新建用户默认角色
+  # ---------- 管理后台（旧 X-Admin-Token 已下线，由 Spring Security JWT 接管） ----------
+  admin:
+    token: ${UMS_ADMIN_TOKEN:}
+  crawler:
+    base-url: ${UMS_CRAWLER_URL:http://localhost:8100}
+  mgmt:
+    base-url: ${UMS_MGMT_URL:http://127.0.0.1:15672}
+    user: ${UMS_MGMT_USER:ums_admin}
+    password: ${UMS_MGMT_PASSWORD:1eAODIRLqpRazsxV}
+
+  # ---------- 采集调度（执行参数；启停/cron 由 XXL-JOB 调度中心控制） ----------
+  scheduler:
+    trigger-limit: ${UMS_SCHEDULER_LIMIT:10}
+  xxl-job:
+    enabled: ${UMS_XXL_JOB_ENABLED:false}
+    admin-addresses: ${UMS_XXL_ADMIN:http://127.0.0.1:8081/xxl-job-admin}
+    appname: ums-main-executor
+    port: ${UMS_XXL_PORT:9999}
+    access-token: ${UMS_XXL_TOKEN:default_token}
+
+logging:
+  level:
+    com.example.ums: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,51 @@
+# Python 3.13+ 依赖清单
+#
+# 由 requirements.txt 派生。原文件中的下列版本锁停留在 Python 3.11 时代，
+# 在 3.13 上没有预编译 wheel，pip 会转去源码编译并失败：
+#   numpy==1.24.3      -> 无 cp313 wheel（仅支持到 3.11）
+#   pandas==2.1.1      -> 无 cp313 wheel，且依赖 numpy 的 Cython 头文件
+#   lxml==4.9.3        -> 无 cp313 wheel
+#   matplotlib==3.7.2  -> 无 cp313 wheel
+#   sqlalchemy==2.0.21 -> 无 cp313 wheel
+#   scrapy==2.11.0     -> 依赖旧版 lxml
+# 上述包在此文件中改为下限约束，其余保持原有版本锁。
+#
+# 另：原 requirements.txt 漏了 scipy，而 analysis/generate_reports.py 使用了
+# seaborn 的 kde=True（内部调用 scipy.stats.gaussian_kde），缺 scipy 会直接报错。
+
+# --- Web 服务 ---
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-CORS==4.0.0
+gunicorn>=23.0.0
+
+# --- ORM / 数据库 ---
+sqlalchemy>=2.0.36
+alembic>=1.13.0
+pymysql==1.1.0
+redis==4.6.0
+celery>=5.4.0
+
+# --- 爬虫 ---
+scrapy>=2.12.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml>=5.3.0
+
+# --- 数据分析与可视化 ---
+pandas>=2.2.3
+numpy>=2.1.0
+matplotlib>=3.9.2
+seaborn>=0.13.2
+scipy>=1.14.0
+openpyxl==3.1.2
+jieba==0.42.1
+
+# --- 工具 ---
+python-dotenv==1.0.0
+python-dateutil==2.8.2
+schedule==1.2.0
+
+# --- 测试 ---
+pytest>=8.0.0
+pytest-cov==4.1.0

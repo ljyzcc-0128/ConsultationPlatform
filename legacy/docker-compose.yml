@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: consultation_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: consultation_platform
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data/database:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - consultation_network
+
+  # Redis缓存
+  redis:
+    image: redis:7.0
+    container_name: consultation_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - consultation_network
+
+  # Flask Web应用
+  web:
+    build: .
+    container_name: consultation_web
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=mysql+pymysql://app_user:app_password@mysql:3306/consultation_platform
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    networks:
+      - consultation_network
+    command: python main.py
+
+  # Scrapy爬虫
+  crawler:
+    build: .
+    container_name: consultation_crawler
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - DATABASE_URL=mysql+pymysql://app_user:app_password@mysql:3306/consultation_platform
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    working_dir: /app/spiders
+    command: scrapy crawl doctors
+    networks:
+      - consultation_network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  consultation_network:
+    driver: bridge
