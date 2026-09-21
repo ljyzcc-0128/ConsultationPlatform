@@ -205,3 +205,6 @@ dmypy.json
 *.suo
 *.userprefs
 *.sdf
+
+# Erlang crash dump
+erl_crash.dump
