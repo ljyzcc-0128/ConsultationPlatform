@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -31,8 +30,7 @@ public class GlmProvider implements AIProcessingService {
     private static final Logger log = LoggerFactory.getLogger(GlmProvider.class);
 
     /** 统一主题字典（与 cp_source.category 同源；一期内置，后续迁入配置） */
-    private static final String CATEGORY_DICTIONARY =
-            "BESS, Policy, Power Market, Electricity Price, Renewable Energy, Supply Chain, "
+    private static final String CATEGORY_DICTIONARY = "BESS, Policy, Power Market, Electricity Price, Renewable Energy, Supply Chain, "
             + "Technology, Market Analysis, Company News, Regulation, Safety, Finance";
 
     private static final String SUMMARIZE_SYSTEM_PROMPT = """
@@ -96,7 +94,8 @@ public class GlmProvider implements AIProcessingService {
 
     private String truncate(String text) {
         return text != null && text.length() > MAX_INPUT_CHARS
-                ? text.substring(0, MAX_INPUT_CHARS) : text;
+                ? text.substring(0, MAX_INPUT_CHARS)
+                : text;
     }
 
     private ChatResponse chat(String systemPrompt, String userPrompt, String responseFormat) {
@@ -119,8 +118,7 @@ public class GlmProvider implements AIProcessingService {
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
-            HttpResponse<String> response =
-                    httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() / 100 != 2) {
                 throw new IllegalStateException("GLM API HTTP " + response.statusCode()
                         + ": " + snippet(response.body()));
@@ -173,7 +171,8 @@ public class GlmProvider implements AIProcessingService {
 
     // ---------------- OpenAI 兼容协议 DTO ----------------
 
-    record Message(String role, String content) {}
+    record Message(String role, String content) {
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ChatResponse(List<Choice> choices) {
@@ -183,5 +182,6 @@ public class GlmProvider implements AIProcessingService {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Choice(Message message) {}
+    record Choice(Message message) {
+    }
 }
