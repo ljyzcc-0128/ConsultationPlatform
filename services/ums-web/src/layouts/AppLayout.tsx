@@ -26,16 +26,6 @@ export function AppLayout() {
       <div className="stars" />
       <div className="scanlines" />
 
-      {/* 主题切换 */}
-      <button
-        className="theme-switch"
-        type="button"
-        onClick={toggleTheme}
-        aria-label="切换主题"
-      >
-        切换：{theme === 'cool' ? '极简版' : '炫酷版'}
-      </button>
-
       {/* 顶栏 */}
       <nav className="navbar">
         <div className="logo">储能资讯平台</div>
@@ -50,6 +40,14 @@ export function AppLayout() {
           )}
         </div>
         <div className="nav-right">
+          <button
+            className="theme-switch"
+            type="button"
+            onClick={toggleTheme}
+            aria-label="切换主题"
+          >
+            切换：{theme === 'cool' ? '极简版' : '炫酷版'}
+          </button>
           <span>{user?.displayName ?? user?.username}</span>
           <Select
             size="small"

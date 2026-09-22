@@ -208,3 +208,10 @@ dmypy.json
 
 # Erlang crash dump
 erl_crash.dump
+
+# 开发辅助工具（定时推送/重建历史脚本）
+scripts/
+.git/replay-commits.log
+.git/daily-push.log
+.git/daily-push-day
+/var/folders/
