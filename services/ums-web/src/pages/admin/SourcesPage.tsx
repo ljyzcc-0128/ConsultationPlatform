@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
   Button,
-  Card,
   Form,
   Input,
   Modal,
@@ -120,207 +119,214 @@ export function SourcesPage() {
   };
 
   return (
-    <Card
-      title="信源管理"
-      extra={
-        <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            新增信源
-          </Button>
-          <Input.Search
-            placeholder="按信源名称筛选"
-            allowClear
-            style={{ width: 200 }}
-            onSearch={(v) => table.setFilter('sourceName', v)}
-          />
-          <Button icon={<ReloadOutlined />} onClick={() => table.reload()}>
-            刷新
-          </Button>
-        </Space>
-      }
-    >
-      {table.query.isError ? (
-        <ErrorState error={table.query.error} onRetry={() => table.reload()} />
-      ) : table.query.isLoading ? (
-        <ListSkeleton rows={5} />
-      ) : (
-        <Table<Source>
-          rowKey="sourceId"
-          dataSource={table.data}
-          pagination={table.pagination}
-          columns={[
-            { title: '信源ID', dataIndex: 'sourceId', width: 90 },
-            { title: '名称', dataIndex: 'sourceName', width: 180 },
-            { title: '地区', dataIndex: 'region', width: 80 },
-            {
-              title: '抓取开关',
-              dataIndex: 'crawlEnabled',
-              width: 100,
-              render: (v: boolean, record) => (
-                <Switch
-                  checked={v}
-                  size="small"
-                  onChange={(crawlEnabled) =>
-                    updateMutation.mutate({ id: record.sourceId, body: { crawlEnabled } })
-                  }
-                />
-              ),
-            },
-            { title: '频率', dataIndex: 'crawlFrequency', width: 90 },
-            { title: '优先级', dataIndex: 'priority', width: 80 },
-            {
-              title: '最近抓取',
-              dataIndex: 'lastCrawlTime',
-              width: 160,
-              render: (v: string | null) => v ?? <Typography.Text type="secondary">未运行</Typography.Text>,
-            },
-            {
-              title: '状态',
-              dataIndex: 'crawlStatus',
-              width: 90,
-              render: (v: string) => {
-                const meta = CRAWL_STATUS_TEXT[v] ?? { text: v, status: 'default' as const };
-                return <Badge status={meta.status} text={meta.text} />;
-              },
-            },
-            {
-              title: '操作',
-              width: 200,
-              render: (_, record) => (
-                <Space>
-                  <Button size="small" onClick={() => openEdit(record)}>
-                    编辑
-                  </Button>
-                  <Popconfirm
-                    title="手动触发一次抓取？"
-                    description="将调用 Python 采集服务抓取该信源最新内容。"
-                    onConfirm={() => triggerMutation.mutate(record.sourceId)}
-                  >
-                    <Button
-                      size="small"
-                      icon={<PlayCircleOutlined />}
-                      loading={triggerMutation.isPending && triggerMutation.variables === record.sourceId}
-                    >
-                      触发抓取
-                    </Button>
-                  </Popconfirm>
-                </Space>
-              ),
-            },
-          ]}
-          expandable={{
-            expandedRowRender: (record) => (
-              <Space direction="vertical" size={2}>
-                <Typography.Text type="secondary">
-                  入口：{record.entryUrl} · 语言：{record.language} · 类型：{record.sourceType}
-                </Typography.Text>
-                <Space size={6} wrap>
-                  {(() => {
-                    try {
-                      const cats = record.category ? (JSON.parse(record.category) as string[]) : [];
-                      return cats.map((c) => <Tag key={c}>{c}</Tag>);
-                    } catch {
-                      return record.category ? <Tag>{record.category}</Tag> : null;
+    <>
+      <div className="page-head">
+        <div>
+          <h1>信源管理</h1>
+          <div className="sub">配置采集信源入口、抓取频率与优先级，可手动触发一次抓取</div>
+        </div>
+        <div className="head-actions">
+          <Space>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              新增信源
+            </Button>
+            <Input.Search
+              placeholder="按信源名称筛选"
+              allowClear
+              style={{ width: 200 }}
+              onSearch={(v) => table.setFilter('sourceName', v)}
+            />
+            <Button icon={<ReloadOutlined />} onClick={() => table.reload()}>
+              刷新
+            </Button>
+          </Space>
+        </div>
+      </div>
+
+      <div className="admin-table-wrap">
+        {table.query.isError ? (
+          <ErrorState error={table.query.error} onRetry={() => table.reload()} />
+        ) : table.query.isLoading ? (
+          <ListSkeleton rows={5} />
+        ) : (
+          <Table<Source>
+            rowKey="sourceId"
+            dataSource={table.data}
+            pagination={table.pagination}
+            columns={[
+              { title: '信源ID', dataIndex: 'sourceId', width: 90 },
+              { title: '名称', dataIndex: 'sourceName', width: 180 },
+              { title: '地区', dataIndex: 'region', width: 80 },
+              {
+                title: '抓取开关',
+                dataIndex: 'crawlEnabled',
+                width: 100,
+                render: (v: boolean, record) => (
+                  <Switch
+                    checked={v}
+                    size="small"
+                    onChange={(crawlEnabled) =>
+                      updateMutation.mutate({ id: record.sourceId, body: { crawlEnabled } })
                     }
-                  })()}
+                  />
+                ),
+              },
+              { title: '频率', dataIndex: 'crawlFrequency', width: 90 },
+              { title: '优先级', dataIndex: 'priority', width: 80 },
+              {
+                title: '最近抓取',
+                dataIndex: 'lastCrawlTime',
+                width: 160,
+                render: (v: string | null) => v ?? <Typography.Text type="secondary">未运行</Typography.Text>,
+              },
+              {
+                title: '状态',
+                dataIndex: 'crawlStatus',
+                width: 90,
+                render: (v: string) => {
+                  const meta = CRAWL_STATUS_TEXT[v] ?? { text: v, status: 'default' as const };
+                  return <Badge status={meta.status} text={meta.text} />;
+                },
+              },
+              {
+                title: '操作',
+                width: 200,
+                render: (_, record) => (
+                  <Space>
+                    <Button size="small" onClick={() => openEdit(record)}>
+                      编辑
+                    </Button>
+                    <Popconfirm
+                      title="手动触发一次抓取？"
+                      description="将调用 Python 采集服务抓取该信源最新内容。"
+                      onConfirm={() => triggerMutation.mutate(record.sourceId)}
+                    >
+                      <Button
+                        size="small"
+                        icon={<PlayCircleOutlined />}
+                        loading={triggerMutation.isPending && triggerMutation.variables === record.sourceId}
+                      >
+                        触发抓取
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ),
+              },
+            ]}
+            expandable={{
+              expandedRowRender: (record) => (
+                <Space direction="vertical" size={2}>
+                  <Typography.Text type="secondary">
+                    入口：{record.entryUrl} · 语言：{record.language} · 类型：{record.sourceType}
+                  </Typography.Text>
+                  <Space size={6} wrap>
+                    {(() => {
+                      try {
+                        const cats = record.category ? (JSON.parse(record.category) as string[]) : [];
+                        return cats.map((c) => <Tag key={c}>{c}</Tag>);
+                      } catch {
+                        return record.category ? <Tag>{record.category}</Tag> : null;
+                      }
+                    })()}
+                  </Space>
+                  {record.remark && (
+                    <Typography.Text type="secondary">备注：{record.remark}</Typography.Text>
+                  )}
                 </Space>
-                {record.remark && (
-                  <Typography.Text type="secondary">备注：{record.remark}</Typography.Text>
-                )}
-              </Space>
-            ),
-          }}
-        />
-      )}
+              ),
+            }}
+          />
+        )}
 
-      <Modal
-        title={`编辑信源：${editing?.sourceId ?? ''}`}
-        open={Boolean(editing)}
-        onCancel={() => setEditing(null)}
-        onOk={() => form.submit()}
-        confirmLoading={updateMutation.isPending}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => {
-            if (!editing) return;
-            const body: SourceUpdateBody = {
-              sourceName: values.sourceName,
-              crawlEnabled: values.crawlEnabled,
-              crawlFrequency: values.crawlFrequency,
-              priority: values.priority,
-              remark: values.remark ?? undefined,
-            };
-            updateMutation.mutate({ id: editing.sourceId, body });
-          }}
+        <Modal
+          title={`编辑信源：${editing?.sourceId ?? ''}`}
+          open={Boolean(editing)}
+          onCancel={() => setEditing(null)}
+          onOk={() => form.submit()}
+          confirmLoading={updateMutation.isPending}
         >
-          <Form.Item name="sourceName" label="信源名称" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="crawlFrequency" label="抓取频率">
-            <Select options={FREQUENCY_OPTIONS} />
-          </Form.Item>
-          <Form.Item name="priority" label="优先级">
-            <Select options={PRIORITY_OPTIONS} />
-          </Form.Item>
-          <Form.Item name="crawlEnabled" label="启用定时抓取" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <Form.Item name="remark" label="备注">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={(values) => {
+              if (!editing) return;
+              const body: SourceUpdateBody = {
+                sourceName: values.sourceName,
+                crawlEnabled: values.crawlEnabled,
+                crawlFrequency: values.crawlFrequency,
+                priority: values.priority,
+                remark: values.remark ?? undefined,
+              };
+              updateMutation.mutate({ id: editing.sourceId, body });
+            }}
+          >
+            <Form.Item name="sourceName" label="信源名称" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="crawlFrequency" label="抓取频率">
+              <Select options={FREQUENCY_OPTIONS} />
+            </Form.Item>
+            <Form.Item name="priority" label="优先级">
+              <Select options={PRIORITY_OPTIONS} />
+            </Form.Item>
+            <Form.Item name="crawlEnabled" label="启用定时抓取" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Form.Item name="remark" label="备注">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </Form>
+        </Modal>
 
-      <Modal
-        title="新增信源"
-        open={creating}
-        onCancel={() => setCreating(false)}
-        onOk={() => createForm.submit()}
-        confirmLoading={createMutation.isPending}
-        width={600}
-      >
-        <Form
-          form={createForm}
-          layout="vertical"
-          onFinish={(values) => createMutation.mutate(values)}
+        <Modal
+          title="新增信源"
+          open={creating}
+          onCancel={() => setCreating(false)}
+          onOk={() => createForm.submit()}
+          confirmLoading={createMutation.isPending}
+          width={600}
         >
-          <Form.Item name="sourceId" label="信源ID" rules={[{ required: true, message: '请输入信源ID' }]}>
-            <Input placeholder="如 CN-03" />
-          </Form.Item>
-          <Form.Item name="sourceName" label="信源名称" rules={[{ required: true, message: '请输入信源名称' }]}>
-            <Input placeholder="如 中国储能网" />
-          </Form.Item>
-          <Form.Item name="entryUrl" label="入口URL" rules={[{ required: true, message: '请输入入口URL' }]}>
-            <Input placeholder="https://..." />
-          </Form.Item>
-          <Form.Item name="region" label="覆盖区域">
-            <Input placeholder="如 中国 / 海外" />
-          </Form.Item>
-          <Form.Item name="sourceType" label="来源类型">
-            <Input placeholder="如 行业媒体 / 政策聚合" />
-          </Form.Item>
-          <Form.Item name="language" label="默认语言" rules={[{ required: true }]}>
-            <Select options={LANGUAGE_OPTIONS} />
-          </Form.Item>
-          <Form.Item name="crawlFrequency" label="抓取频率">
-            <Select options={FREQUENCY_OPTIONS} />
-          </Form.Item>
-          <Form.Item name="priority" label="优先级">
-            <Select options={PRIORITY_OPTIONS} />
-          </Form.Item>
-          <Form.Item name="crawlEnabled" label="启用定时抓取" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <Form.Item name="category" label="主题标签（JSON 数组）">
-            <Input placeholder='如 ["BESS","Policy"]' />
-          </Form.Item>
-          <Form.Item name="remark" label="备注">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Card>
+          <Form
+            form={createForm}
+            layout="vertical"
+            onFinish={(values) => createMutation.mutate(values)}
+          >
+            <Form.Item name="sourceId" label="信源ID" rules={[{ required: true, message: '请输入信源ID' }]}>
+              <Input placeholder="如 CN-03" />
+            </Form.Item>
+            <Form.Item name="sourceName" label="信源名称" rules={[{ required: true, message: '请输入信源名称' }]}>
+              <Input placeholder="如 中国储能网" />
+            </Form.Item>
+            <Form.Item name="entryUrl" label="入口URL" rules={[{ required: true, message: '请输入入口URL' }]}>
+              <Input placeholder="https://..." />
+            </Form.Item>
+            <Form.Item name="region" label="覆盖区域">
+              <Input placeholder="如 中国 / 海外" />
+            </Form.Item>
+            <Form.Item name="sourceType" label="来源类型">
+              <Input placeholder="如 行业媒体 / 政策聚合" />
+            </Form.Item>
+            <Form.Item name="language" label="默认语言" rules={[{ required: true }]}>
+              <Select options={LANGUAGE_OPTIONS} />
+            </Form.Item>
+            <Form.Item name="crawlFrequency" label="抓取频率">
+              <Select options={FREQUENCY_OPTIONS} />
+            </Form.Item>
+            <Form.Item name="priority" label="优先级">
+              <Select options={PRIORITY_OPTIONS} />
+            </Form.Item>
+            <Form.Item name="crawlEnabled" label="启用定时抓取" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Form.Item name="category" label="主题标签（JSON 数组）">
+              <Input placeholder='如 ["BESS","Policy"]' />
+            </Form.Item>
+            <Form.Item name="remark" label="备注">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </>
   );
 }

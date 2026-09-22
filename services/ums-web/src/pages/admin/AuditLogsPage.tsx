@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Select, Space, Table, Tag, Typography } from 'antd';
+import { Button, Select, Space, Table, Tag, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { api } from '../../api/client';
 import { AUDIT_ACTION_TEXT, type AuditLog } from '../../api/types';
@@ -45,89 +45,96 @@ export function AuditLogsPage() {
   }
 
   return (
-    <Card
-      title="审计日志"
-      extra={
-        <Space>
-          <Select
-            allowClear
-            placeholder="操作类型"
-            style={{ width: 170 }}
-            value={action}
-            onChange={(v) => {
-              setAction(v);
-              setPage(1);
+    <>
+      <div className="page-head">
+        <div>
+          <h1>审计日志</h1>
+          <div className="sub">管理端的信源配置、审核、DLQ 等操作都会记录在此，支持按操作类型筛选</div>
+        </div>
+        <div className="head-actions">
+          <Space>
+            <Select
+              allowClear
+              placeholder="操作类型"
+              style={{ width: 170 }}
+              value={action}
+              onChange={(v) => {
+                setAction(v);
+                setPage(1);
+              }}
+              options={Object.entries(AUDIT_ACTION_TEXT).map(([value, label]) => ({ value, label }))}
+            />
+            <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isFetching}>
+              刷新
+            </Button>
+          </Space>
+        </div>
+      </div>
+
+      <div className="admin-table-wrap">
+        {isLoading ? (
+          <ListSkeleton rows={6} />
+        ) : isError ? (
+          <ErrorState error={error} onRetry={() => refetch()} />
+        ) : (
+          <Table<AuditLog>
+            rowKey="logId"
+            dataSource={pageData}
+            pagination={{
+              current: page,
+              pageSize,
+              total: allLogs.length,
+              onChange: setPage,
+              showTotal: (t) => `共 ${t} 条`,
             }}
-            options={Object.entries(AUDIT_ACTION_TEXT).map(([value, label]) => ({ value, label }))}
-          />
-          <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isFetching}>
-            刷新
-          </Button>
-        </Space>
-      }
-    >
-      {isLoading ? (
-        <ListSkeleton rows={6} />
-      ) : isError ? (
-        <ErrorState error={error} onRetry={() => refetch()} />
-      ) : (
-        <Table<AuditLog>
-          rowKey="logId"
-          dataSource={pageData}
-          pagination={{
-            current: page,
-            pageSize,
-            total: allLogs.length,
-            onChange: setPage,
-            showTotal: (t) => `共 ${t} 条`,
-          }}
-          locale={{
-            emptyText: <EmptyState description="暂无审计记录。管理端的信源配置、审核、DLQ 等操作都会记录在此。" />,
-          }}
-          columns={[
-            { title: 'ID', dataIndex: 'logId', width: 70 },
-            { title: '操作人', dataIndex: 'operator', width: 110 },
-            {
-              title: '操作',
-              dataIndex: 'action',
-              width: 140,
-              render: (v: string) => (
-                <Tag color="blue">{AUDIT_ACTION_TEXT[v] ?? v}</Tag>
-              ),
-            },
-            { title: '对象类型', dataIndex: 'objectType', width: 100 },
-            {
-              title: '对象ID',
-              dataIndex: 'objectId',
-              width: 150,
-              render: (v: string | null) =>
-                v ? (
-                  <Typography.Text code style={{ fontSize: 11 }}>
-                    {v.length > 18 ? `${v.slice(0, 16)}…` : v}
-                  </Typography.Text>
-                ) : (
-                  <Typography.Text type="secondary">—</Typography.Text>
+            locale={{
+              emptyText: <EmptyState description="暂无审计记录。管理端的信源配置、审核、DLQ 等操作都会记录在此。" />,
+            }}
+            columns={[
+              { title: 'ID', dataIndex: 'logId', width: 70 },
+              { title: '操作人', dataIndex: 'operator', width: 110 },
+              {
+                title: '操作',
+                dataIndex: 'action',
+                width: 140,
+                render: (v: string) => (
+                  <Tag color="blue">{AUDIT_ACTION_TEXT[v] ?? v}</Tag>
                 ),
-            },
-            {
-              title: '时间',
-              dataIndex: 'createdAt',
-              width: 170,
-              render: (v: string) => v.replace('T', ' ').slice(0, 19),
-            },
-          ]}
-          expandable={{
-            expandedRowRender: (record) => (
-              <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  操作详情（高亮展示本次写入/变更的字段）：
-                </Typography.Text>
-                <JsonDiff after={extractAfter(record.detail)} />
-              </Space>
-            ),
-          }}
-        />
-      )}
-    </Card>
+              },
+              { title: '对象类型', dataIndex: 'objectType', width: 100 },
+              {
+                title: '对象ID',
+                dataIndex: 'objectId',
+                width: 150,
+                render: (v: string | null) =>
+                  v ? (
+                    <Typography.Text code style={{ fontSize: 11 }}>
+                      {v.length > 18 ? `${v.slice(0, 16)}…` : v}
+                    </Typography.Text>
+                  ) : (
+                    <Typography.Text type="secondary">—</Typography.Text>
+                  ),
+              },
+              {
+                title: '时间',
+                dataIndex: 'createdAt',
+                width: 170,
+                render: (v: string) => v.replace('T', ' ').slice(0, 19),
+              },
+            ]}
+            expandable={{
+              expandedRowRender: (record) => (
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    操作详情（高亮展示本次写入/变更的字段）：
+                  </Typography.Text>
+                  <JsonDiff after={extractAfter(record.detail)} />
+                </Space>
+              ),
+            }}
+          />
+        )}
+      </div>
+    </>
   );
 }

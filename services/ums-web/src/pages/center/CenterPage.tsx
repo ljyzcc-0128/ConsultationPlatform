@@ -2,22 +2,18 @@ import { useCallback, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Card,
   Col,
   DatePicker,
   Empty,
   Input,
   Row,
   Select,
-  Space,
-  Tag,
   Typography,
 } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
 import { api } from '../../api/client';
 import { CATEGORY_DICT, type NewsItem, type NewsListResponse } from '../../api/types';
-import { AiTag } from '../../components/AiTag';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { ListSkeleton } from '../../components/ListSkeleton';
@@ -105,14 +101,18 @@ export function CenterPage() {
   );
 
   return (
-    <Card
-      title="情报中心"
-      extra={
-        isFetching ? <Typography.Text type="secondary">查询中…</Typography.Text> : null
-      }
-    >
+    <>
+      <div className="page-head">
+        <div>
+          <h1>情报中心</h1>
+          <div className="sub">
+            {isFetching ? '查询中…' : '检索全量资讯，按内容域 / 语言 / 来源 / 时间筛选，关键词全文匹配高亮'}
+          </div>
+        </div>
+      </div>
+
       {/* 搜索框独立于组合筛选，可叠加使用（IC-003） */}
-      <Space direction="vertical" size={16} style={{ width: '100%', marginBottom: 16 }}>
+      <div className="filter-bar">
         <Input
           allowClear
           size="large"
@@ -120,9 +120,10 @@ export function CenterPage() {
           placeholder="搜索标题 / 摘要关键词…"
           value={keyword}
           onChange={(e) => updateParam('q', e.target.value || null)}
-          style={{ maxWidth: 560 }}
+          className="filter-search"
+          data-testid="center-search"
         />
-        <Space size={12} wrap>
+        <div className="filter-row">
           <Select
             mode="multiple"
             allowClear
@@ -157,8 +158,8 @@ export function CenterPage() {
               updateParam('dateTo', dates?.[1] ? dates[1].format('YYYY-MM-DD') : null);
             }}
           />
-        </Space>
-      </Space>
+        </div>
+      </div>
 
       {isLoading ? (
         <ListSkeleton rows={6} />
@@ -177,48 +178,47 @@ export function CenterPage() {
         <Row gutter={[16, 16]}>
           {items.map((item) => (
             <Col xs={24} lg={12} key={item.articleId}>
-              <Card
-                size="small"
-                hoverable
-                onClick={() => navigate(`/center/${item.articleId}`)}
+              <div
+                className="feed-card"
                 data-testid="news-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/center/${item.articleId}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/center/${item.articleId}`);
+                  }
+                }}
               >
-                <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                  <Typography.Text strong>
-                    <HighlightText text={item.title} keyword={debouncedKeyword} />
-                  </Typography.Text>
-                  {item.summary && (
-                    <Typography.Paragraph
-                      type="secondary"
-                      ellipsis={{ rows: 2 }}
-                      style={{ marginBottom: 0 }}
-                    >
-                      <HighlightText text={item.summary} keyword={debouncedKeyword} />
-                    </Typography.Paragraph>
-                  )}
-                  <Space size={8} wrap>
-                    {item.summary ? <AiTag /> : null}
-                    {item.category.slice(0, 3).map((c) => (
-                      <Tag key={c} style={{ fontSize: 11 }}>
-                        {c}
-                      </Tag>
-                    ))}
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      {item.sourceName} · {item.publishDate}
-                    </Typography.Text>
-                  </Space>
-                </Space>
-              </Card>
+                <div className="feed-title">
+                  <HighlightText text={item.title} keyword={debouncedKeyword} />
+                </div>
+                {item.summary && (
+                  <div className="feed-summary">
+                    <HighlightText text={item.summary} keyword={debouncedKeyword} />
+                  </div>
+                )}
+                <div className="feed-meta">
+                  {item.category.slice(0, 3).map((c) => (
+                    <span key={c} className="tag">{c}</span>
+                  ))}
+                  <span className="dot" />
+                  <span className="src">{item.sourceName}</span>
+                  <span className="dot" />
+                  <span>{item.publishDate}</span>
+                </div>
+              </div>
             </Col>
           ))}
         </Row>
       )}
-      <div style={{ marginTop: 16 }}>
+      <div className="filter-stat">
         <Typography.Text type="secondary">
           共 {data?.total ?? 0} 条 ·{' '}
           <Link to="/feed/subscriptions">设置关注规则</Link> 可让相关信息自动进入「我的情报」
         </Typography.Text>
       </div>
-    </Card>
+    </>
   );
 }

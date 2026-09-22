@@ -1,83 +1,92 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Button, Layout, Menu, Select, Space, Typography } from 'antd';
-import { LogoutOutlined } from '@ant-design/icons';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Select } from 'antd';
 import { useAuth } from '../auth/AuthContext';
-
-const { Header, Content, Footer } = Layout;
+import { useTheme } from '../theme/ThemeProvider';
 
 const NAV_ITEMS = [
   { key: '/feed', label: '我的情报' },
   { key: '/center', label: '情报中心' },
   { key: '/supply-chain', label: '供应链看板' },
-];
+] as const;
 
+/**
+ * 应用整体布局（参照设计稿 deepseek_html_20260922_264734.html）。
+ * 自定义 navbar + 背景装饰层 + .page 内容区，替代 Ant Design Layout/Header/Menu。
+ */
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const isAdmin = user?.roles.includes('ADMIN') ?? false;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: '#001529',
-        }}
+    <>
+      {/* 背景装饰层（炫酷版显示） */}
+      <div className="aurora" />
+      <div className="stars" />
+      <div className="scanlines" />
+
+      {/* 主题切换 */}
+      <button
+        className="theme-switch"
+        type="button"
+        onClick={toggleTheme}
+        aria-label="切换主题"
       >
-        <Space size={32}>
-          <Typography.Title level={4} style={{ color: '#fff', margin: 0 }}>
-            储能资讯平台
-          </Typography.Title>
-          <Menu
-            theme="dark"
-            mode="horizontal"
-            selectedKeys={[]}
-            style={{ background: 'transparent', minWidth: 360 }}
-            items={[
-              ...NAV_ITEMS.map((item) => ({
-                key: item.key,
-                label: <NavLink to={item.key}>{item.label}</NavLink>,
-              })),
-              ...(isAdmin
-                ? [{ key: '/admin', label: <NavLink to="/admin">管理后台</NavLink> }]
-                : []),
-            ]}
-            onClick={({ key }) => navigate(key)}
-          />
-        </Space>
-        <Space size={12} align="center">
-          <Typography.Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>
-            {user?.displayName ?? user?.username}
-          </Typography.Text>
+        切换：{theme === 'cool' ? '极简版' : '炫酷版'}
+      </button>
+
+      {/* 顶栏 */}
+      <nav className="navbar">
+        <div className="logo">储能资讯平台</div>
+        <div className="nav-links">
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.key} to={item.key}>
+              {item.label}
+            </NavLink>
+          ))}
+          {isAdmin && (
+            <NavLink to="/admin">管理后台</NavLink>
+          )}
+        </div>
+        <div className="nav-right">
+          <span>{user?.displayName ?? user?.username}</span>
           <Select
             size="small"
             variant="borderless"
-            style={{ width: 130, color: 'rgba(255,255,255,0.85)' }}
+            style={{ width: 130 }}
             defaultValue="zh-CN"
             options={[{ value: 'zh-CN', label: '简体中文' }]}
             aria-label="界面语言"
           />
-          <Button
-            type="text"
-            icon={<LogoutOutlined />}
-            style={{ color: 'rgba(255,255,255,0.85)' }}
+          <span
+            className="logout"
+            role="button"
+            tabIndex={0}
             onClick={() => {
               logout();
               navigate('/login');
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                logout();
+                navigate('/login');
+              }
+            }}
           >
-            退出
-          </Button>
-        </Space>
-      </Header>
-      <Content style={{ padding: '24px 32px', maxWidth: 1280, width: '100%', margin: '0 auto' }}>
+            ⏻ 退出
+          </span>
+        </div>
+      </nav>
+
+      <div className="page">
         <Outlet />
-      </Content>
-      <Footer style={{ textAlign: 'center', color: 'rgba(0,0,0,0.45)' }}>
+      </div>
+
+      <footer className="app-footer">
         储能资讯平台一期 · Jinko ESS · 数据仅供内部参考
-      </Footer>
-    </Layout>
+      </footer>
+    </>
   );
 }

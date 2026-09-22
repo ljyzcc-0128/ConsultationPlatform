@@ -1,18 +1,9 @@
 import { useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Badge, Button, Card, List, Space, Tabs, Tag, Tooltip, Typography, message } from 'antd';
-import {
-  CheckOutlined,
-  ThunderboltOutlined,
-  LinkOutlined,
-  MailOutlined,
-  WechatOutlined,
-  BellOutlined,
-} from '@ant-design/icons';
+import { message } from 'antd';
 import { useBatchMarkRead, useFeed, type FeedTab } from '../../hooks/useFeed';
 import type { FeedItem, PushRecord } from '../../api/types';
 import { CHANNEL_TEXT, PUSH_MSG_STATUS_TEXT } from '../../api/types';
-import { AiTag } from '../../components/AiTag';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { ListSkeleton } from '../../components/ListSkeleton';
@@ -23,12 +14,6 @@ const TABS: Array<{ key: FeedTab; label: string }> = [
   { key: 'updates', label: '普通更新' },
   { key: 'pushes', label: '推送记录' },
 ];
-
-const CHANNEL_ICON: Record<string, React.ReactNode> = {
-  IN_APP: <BellOutlined />,
-  EMAIL: <MailOutlined />,
-  WECHAT: <WechatOutlined />,
-};
 
 function formatTime(item: FeedItem): string {
   return item.publishTime ? item.publishTime.replace('T', ' ') : item.publishDate;
@@ -44,91 +29,56 @@ function FeedItemRow({
 }) {
   const isMajor = item.changeType === 'MAJOR';
   return (
-    <List.Item
-      style={{
-        borderLeft: isMajor ? '4px solid #fa8c16' : undefined,
-        paddingLeft: isMajor ? 12 : 16,
-        paddingRight: 16,
-        background: item.readStatus ? undefined : '#fafcff',
-        borderRadius: 4,
-        cursor: 'pointer',
-      }}
-      onClick={() => onOpen(item.articleId)}
-    >
-      <List.Item.Meta
-        avatar={
-          !item.readStatus ? (
-            <Tooltip title="未读">
-              <Badge color="#1677ff" status="processing" data-testid="unread-dot" />
-            </Tooltip>
-          ) : (
-            <span style={{ display: 'inline-block', width: 8 }} />
-          )
-        }
-        title={
-          <Space size={8} wrap>
-            {isMajor && (
-              <Tag icon={<ThunderboltOutlined />} color="warning">
-                重大变化
-              </Tag>
-            )}
-            <Typography.Text
-              strong={!item.readStatus}
-              style={{ fontSize: 15 }}
-            >
-              {item.title}
-            </Typography.Text>
-          </Space>
-        }
-        description={
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            {item.summary && (
-              <Typography.Paragraph
-                type="secondary"
-                ellipsis={{ rows: 2, expandable: true, symbol: '展开' }}
-                style={{ marginBottom: 0 }}
-              >
-                {item.summary}
-              </Typography.Paragraph>
-            )}
-            <Space size={12} wrap>
-              {item.aiGeneratedFields.includes('summary') && <AiTag />}
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                {item.sourceName}
-              </Typography.Text>
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                {formatTime(item)}
-              </Typography.Text>
-              {item.language === 'en' && <Tag style={{ fontSize: 11 }}>EN</Tag>}
-            </Space>
-          </Space>
-        }
-      />
-    </List.Item>
+    <div className="feed-item">
+      <div
+        className="feed-card"
+        onClick={() => onOpen(item.articleId)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpen(item.articleId);
+          }
+        }}
+        style={isMajor ? { borderLeft: '3px solid rgba(250,140,22,0.8)' } : undefined}
+      >
+        <div className="feed-title">{item.title}</div>
+        {item.summary && <div className="feed-summary">{item.summary}</div>}
+        <div className="feed-meta">
+          <span className="src">{item.sourceName}</span>
+          <span className="dot" />
+          <span>{formatTime(item)}</span>
+          {item.language === 'en' && <span className="tag en">EN</span>}
+          {!item.readStatus && <span className="tag new">新</span>}
+        </div>
+        <span className="expand-link" aria-hidden="true">
+          展开全文 →
+        </span>
+      </div>
+    </div>
   );
 }
 
 function PushRecordRow({ record }: { record: PushRecord }) {
-  const statusColor =
+  const statusClass =
     record.status === 'CLICKED'
-      ? 'green'
+      ? 'en'
       : record.status === 'DELIVERED' || record.status === 'SENT'
-        ? 'blue'
-        : 'red';
+        ? 'en'
+        : 'new';
   return (
-    <List.Item>
-      <List.Item.Meta
-        avatar={CHANNEL_ICON[record.channel]}
-        title={record.contentTitle}
-        description={
-          <Space size={12}>
-            <Tag>{CHANNEL_TEXT[record.channel]}</Tag>
-            <Tag color={statusColor}>{PUSH_MSG_STATUS_TEXT[record.status]}</Tag>
-            <Typography.Text type="secondary">{record.sentAt}</Typography.Text>
-          </Space>
-        }
-      />
-    </List.Item>
+    <div className="feed-item">
+      <div className="feed-card">
+        <div className="feed-title">{record.contentTitle}</div>
+        <div className="feed-meta">
+          <span className="src">{CHANNEL_TEXT[record.channel]}</span>
+          <span className="dot" />
+          <span>{record.sentAt}</span>
+          <span className={`tag ${statusClass}`}>{PUSH_MSG_STATUS_TEXT[record.status]}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -154,49 +104,70 @@ export function FeedPage() {
     });
   };
 
+  const handleOpen = (item: FeedItem) => (id: string) => {
+    if (!item.readStatus) batchMarkRead.mutate([id]);
+    navigate(`/center/${id}`);
+  };
+
   return (
-    <Card
-      title="我的情报"
-      extra={
-        tab !== 'pushes' ? (
-          <Space>
-            <Typography.Text type="secondary">
+    <>
+      <div className="page-head">
+        <div>
+          <h1>我的情报</h1>
+          <div className="sub">
+            {tab === 'pushes'
+              ? '查看历史推送记录'
+              : `今日为你筛选出 ${feedItems.length} 条高相关内容`}
+          </div>
+        </div>
+        {tab !== 'pushes' && (
+          <div className="head-actions">
+            <span className="unread-pill">
               {unreadCount > 0 ? `${unreadCount} 条未读` : '全部已读'}
-            </Typography.Text>
-            <Button
-              icon={<CheckOutlined />}
+            </span>
+            <button
+              className="btn-ghost"
+              type="button"
               onClick={markAllRead}
-              loading={batchMarkRead.isPending}
+              disabled={batchMarkRead.isPending}
             >
-              全部标记已读
-            </Button>
-          </Space>
-        ) : null
-      }
-    >
-      <Tabs
-        activeKey={tab}
-        onChange={(key) => setSearchParams({ tab: key })}
-        items={TABS.map((t) => ({ key: t.key, label: t.label }))}
-      />
+              ✓ 全部标记已读
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="pill-tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            className={`pill-tab${tab === t.key ? ' active' : ''}`}
+            type="button"
+            onClick={() => setSearchParams({ tab: t.key })}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
         <ListSkeleton rows={5} />
       ) : isError ? (
         <ErrorState error={error} onRetry={() => refetch()} />
       ) : tab === 'pushes' ? (
-        <List
-          dataSource={items as unknown as PushRecord[]}
-          renderItem={(record) => <PushRecordRow record={record} />}
-          locale={{
-            emptyText: (
-              <EmptyState
-                description="还没有推送记录。内容达到推送频率阈值后，会按关注规则的渠道推送给您。"
-                actionText="去配置关注规则"
-                onAction={() => navigate('/feed/subscriptions')}
-              />
-            ),
-          }}
-        />
+        (items as unknown as PushRecord[]).length === 0 ? (
+          <EmptyState
+            description="还没有推送记录。内容达到推送频率阈值后，会按关注规则的渠道推送给您。"
+            actionText="去配置关注规则"
+            onAction={() => navigate('/feed/subscriptions')}
+          />
+        ) : (
+          <div className="timeline">
+            {(items as unknown as PushRecord[]).map((record) => (
+              <PushRecordRow key={record.id} record={record} />
+            ))}
+          </div>
+        )
       ) : feedItems.length === 0 ? (
         <EmptyState
           description={
@@ -208,26 +179,22 @@ export function FeedPage() {
           onAction={() => navigate('/feed/subscriptions')}
         />
       ) : (
-        <List
-          dataSource={feedItems}
-          renderItem={(item) => (
+        <div className="timeline">
+          {feedItems.map((item) => (
             <FeedItemRow
+              key={item.articleId}
               item={item}
-              onOpen={(id) => {
-                if (!item.readStatus) batchMarkRead.mutate([id]);
-                navigate(`/center/${id}`);
-              }}
+              onOpen={handleOpen(item)}
             />
-          )}
-        />
+          ))}
+        </div>
       )}
-      <div style={{ marginTop: 16, textAlign: 'right' }}>
+
+      <div className="footer-action">
         <Link to="/feed/subscriptions">
-          <Button type="link" icon={<LinkOutlined />}>
-            管理我的关注（内容域 / 主题 / 企业 / 关键词 / 指标 / 事件）
-          </Button>
+          🔗 管理我的关注（内容域 / 主题 / 企业 / 关键词 / 指标 / 事件）
         </Link>
       </div>
-    </Card>
+    </>
   );
 }

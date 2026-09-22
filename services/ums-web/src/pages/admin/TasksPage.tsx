@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Badge, Card, Col, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
+import { Badge, Col, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
 import { api } from '../../api/client';
 import type { SchedulerStatus, CrawlTaskRecord } from '../../api/types';
 import { ErrorState } from '../../components/ErrorState';
@@ -24,8 +24,18 @@ export function TasksPage() {
   });
 
   return (
-    <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      <Card title="调度状态（XXL-JOB）">
+    <>
+      <div className="page-head">
+        <div>
+          <h1>采集任务</h1>
+          <div className="sub">调度状态与任务执行记录，监控采集服务的运行情况</div>
+        </div>
+      </div>
+
+      <div className="section-card">
+        <div className="section-head">
+          <div className="section-title">调度状态（XXL-JOB）</div>
+        </div>
         {scheduler.isLoading ? (
           <ListSkeleton rows={2} />
         ) : scheduler.isError ? (
@@ -78,9 +88,12 @@ export function TasksPage() {
             />
           </>
         )}
-      </Card>
+      </div>
 
-      <Card title="任务执行记录">
+      <div className="section-card">
+        <div className="section-head">
+          <div className="section-title">任务执行记录</div>
+        </div>
         {tasks.isLoading ? (
           <ListSkeleton rows={4} />
         ) : tasks.isError ? (
@@ -113,7 +126,7 @@ export function TasksPage() {
             ]}
           />
         )}
-      </Card>
-    </Space>
+      </div>
+    </>
   );
 }

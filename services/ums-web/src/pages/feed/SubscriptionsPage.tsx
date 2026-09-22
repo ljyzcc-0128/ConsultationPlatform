@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
-  Card,
   Form,
   Input,
   Modal,
@@ -12,7 +11,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
   message,
 } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
@@ -87,17 +85,21 @@ export function SubscriptionsPage() {
   const list = data ?? [];
 
   return (
-    <Card
-      title="我的关注"
-      extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-          新增关注
-        </Button>
-      }
-    >
-      <Typography.Paragraph type="secondary">
-        关注规则决定「我的情报」聚合哪些内容，以及推送的频率（实时 / 日报 / 周报）与渠道。
-      </Typography.Paragraph>
+    <>
+      <div className="page-head">
+        <div>
+          <h1>我的关注</h1>
+          <div className="sub">
+            关注规则决定「我的情报」聚合哪些内容，以及推送的频率（实时 / 日报 / 周报）与渠道。
+          </div>
+        </div>
+        <div className="head-actions">
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+            新增关注
+          </Button>
+        </div>
+      </div>
+
       {isError ? (
         <ErrorState error={error} onRetry={() => refetch()} />
       ) : (
@@ -231,6 +233,6 @@ export function SubscriptionsPage() {
           </Space>
         </Form>
       </Modal>
-    </Card>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Card,
   Col,
   Descriptions,
   List,
@@ -31,10 +30,10 @@ import type {
   SupplierUpdate,
 } from '../../api/types';
 
-const RISK_META: Record<SupplierUpdate['riskLevel'], { color: string; border: string; label: string }> = {
-  high: { color: '#fff1f0', border: '#ffa39e', label: '风险高' },
-  medium: { color: '#fffbe6', border: '#ffe58f', label: '风险中' },
-  low: { color: '#f6ffed', border: '#b7eb8f', label: '风险低' },
+const RISK_META: Record<SupplierUpdate['riskLevel'], { label: string }> = {
+  high: { label: '风险高' },
+  medium: { label: '风险中' },
+  low: { label: '风险低' },
 };
 
 function lineOption(points: Array<{ date: string; value: number }>, unit: string) {
@@ -86,41 +85,43 @@ function IndicatorCard({ indicator }: { indicator: IndicatorSeries }) {
   const [expanded, setExpanded] = useState(false);
   const up = indicator.momChange >= 0;
   return (
-    <Card
-      size="small"
-      hoverable
+    <div
+      className="indicator-card"
+      role="button"
+      tabIndex={0}
       onClick={() => setExpanded((v) => !v)}
-      style={{ height: '100%' }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setExpanded((v) => !v);
+        }
+      }}
     >
-      <Space direction="vertical" size={8} style={{ width: '100%' }}>
+      <div style={{ marginBottom: 8 }}>
         <DataSourceBadge scope={indicator.dataScope} sourceName={indicator.sourceName} />
-        <Typography.Text strong>{indicator.name}</Typography.Text>
-        <Space size={8}>
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            {indicator.latestValue}
-          </Typography.Title>
-          <Typography.Text type="secondary">{indicator.unit}</Typography.Text>
-          <Typography.Text style={{ color: up ? '#cf1322' : '#3f8600' }}>
-            {up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(indicator.momChange)}%
-          </Typography.Text>
-        </Space>
-        {expanded ? (
-          <LazyChart
-            option={lineOption(indicator.points, indicator.unit)}
-            height={220}
-            fallback={
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                <DotChartOutlined /> 图表加载中…
-              </Typography.Text>
-            }
-          />
-        ) : (
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            点击展开近 30 天走势
-          </Typography.Text>
-        )}
+      </div>
+      <div className="ind-name">{indicator.name}</div>
+      <Space size={8} align="baseline">
+        <span className="ind-value">{indicator.latestValue}</span>
+        <span className="ind-unit">{indicator.unit}</span>
+        <Typography.Text style={{ color: up ? '#cf1322' : '#3f8600', fontSize: 13 }}>
+          {up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(indicator.momChange)}%
+        </Typography.Text>
       </Space>
-    </Card>
+      {expanded ? (
+        <LazyChart
+          option={lineOption(indicator.points, indicator.unit)}
+          height={220}
+          fallback={
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              <DotChartOutlined /> 图表加载中…
+            </Typography.Text>
+          }
+        />
+      ) : (
+        <div className="ind-hint">点击展开近 30 天走势</div>
+      )}
+    </div>
   );
 }
 
@@ -163,11 +164,24 @@ export function SupplyChainPage() {
   });
 
   return (
-    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+    <>
+      <div className="page-head">
+        <div>
+          <h1>供应链看板</h1>
+          <div className="sub">
+            原材料市场 · 供需库存 · 贸易物流 · 供应商动态，外部市场数据与公司内部数据分区呈现
+          </div>
+        </div>
+      </div>
+
       <AlertExternalData />
 
       {/* 区块一：原材料市场（SC-001） */}
-      <Card title="原材料市场" extra={<Typography.Text type="secondary">点击指标卡展开走势</Typography.Text>}>
+      <div className="section-card">
+        <div className="section-head">
+          <div className="section-title">原材料市场</div>
+          <div className="section-extra">点击指标卡展开走势</div>
+        </div>
         {materials.isLoading ? (
           <ListSkeleton rows={2} />
         ) : materials.isError ? (
@@ -181,21 +195,22 @@ export function SupplyChainPage() {
             ))}
           </Row>
         )}
-      </Card>
+      </div>
 
       {/* 区块二：供需与库存（SC-002，柱状+折线组合图） */}
-      <Card
-        title="供需与库存"
-        extra={
-          inventory.data ? (
-            <Space size={4}>
-              {inventory.data.series.map((s) => (
-                <DataSourceBadge key={s.name} scope={s.dataScope} sourceName={s.sourceName} />
-              ))}
-            </Space>
-          ) : null
-        }
-      >
+      <div className="section-card">
+        <div className="section-head">
+          <div className="section-title">供需与库存</div>
+          <div className="section-extra">
+            {inventory.data ? (
+              <Space size={4}>
+                {inventory.data.series.map((s) => (
+                  <DataSourceBadge key={s.name} scope={s.dataScope} sourceName={s.sourceName} />
+                ))}
+              </Space>
+            ) : null}
+          </div>
+        </div>
         {inventory.isLoading ? (
           <ListSkeleton rows={2} />
         ) : inventory.isError ? (
@@ -203,12 +218,12 @@ export function SupplyChainPage() {
         ) : inventory.data ? (
           <LazyChart option={comboOption(inventory.data)} height={320} />
         ) : null}
-      </Card>
+      </div>
 
       {/* 区块三：贸易与物流（SC-003，列表筛选 + 提单运踪时间线） */}
-      <Card
-        title="贸易与物流"
-        extra={
+      <div className="section-card">
+        <div className="section-head">
+          <div className="section-title">贸易与物流</div>
           <Select
             allowClear
             placeholder="状态筛选"
@@ -217,8 +232,7 @@ export function SupplyChainPage() {
             onChange={setTradeStatus}
             options={['在途', '已到港', '清关中', '已完成'].map((s) => ({ value: s, label: s }))}
           />
-        }
-      >
+        </div>
         {trade.isLoading ? (
           <ListSkeleton rows={3} />
         ) : trade.isError ? (
@@ -264,10 +278,13 @@ export function SupplyChainPage() {
             ]}
           />
         )}
-      </Card>
+      </div>
 
       {/* 区块四：供应商动态（SC-004，卡片 + 风险醒目色块） */}
-      <Card title="供应商动态">
+      <div className="section-card">
+        <div className="section-head">
+          <div className="section-title">供应商动态</div>
+        </div>
         {suppliers.isLoading ? (
           <ListSkeleton rows={3} />
         ) : suppliers.isError ? (
@@ -278,17 +295,9 @@ export function SupplyChainPage() {
             dataSource={suppliers.data?.updates ?? []}
             renderItem={(u) => {
               const meta = RISK_META[u.riskLevel];
-              const highlight = u.updateType.includes('风险') || u.updateType === '停产';
               return (
                 <List.Item>
-                  <Card
-                    size="small"
-                    style={{
-                      height: '100%',
-                      background: highlight ? meta.color : undefined,
-                      borderColor: highlight ? meta.border : undefined,
-                    }}
-                  >
+                  <div className={`supplier-card risk-${u.riskLevel}`}>
                     <Space direction="vertical" size={6} style={{ width: '100%' }}>
                       <Space size={6} wrap>
                         <Tag
@@ -316,40 +325,38 @@ export function SupplyChainPage() {
                         {u.date}
                       </Typography.Text>
                     </Space>
-                  </Card>
+                  </div>
                 </List.Item>
               );
             }}
           />
         )}
-      </Card>
+      </div>
 
-      <Card size="small">
+      <div className="scope-card">
         <Descriptions size="small" column={1}>
           <Descriptions.Item label="数据口径">
             外部市场数据来自 SMM 等第三方供应商，仅供内部参考，对外引用需遵循供应商授权条款；
             内部数据来自公司采购与供应链系统。
           </Descriptions.Item>
         </Descriptions>
-      </Card>
-    </Space>
+      </div>
+    </>
   );
 }
 
 /** 页面顶部对外部数据红线的整体提示 */
 function AlertExternalData() {
   return (
-    <Card size="small" style={{ background: '#fffbe6', borderColor: '#ffe58f' }}>
-      <Space>
-        <Typography.Text strong>合规提示（SC-007）：</Typography.Text>
-        <Typography.Text>
-          本看板同时展示「外部市场数据」与「公司内部数据」，外部数据均以
-          <Tag color="warning" style={{ margin: '0 4px' }}>
-            外部市场数据 · 来源: SMM
-          </Tag>
-          样式醒目标注，请注意区分，避免将外部数据误作内部结论使用。
-        </Typography.Text>
-      </Space>
-    </Card>
+    <div className="alert-card">
+      <Typography.Text strong>合规提示（SC-007）：</Typography.Text>
+      <span>
+        本看板同时展示「外部市场数据」与「公司内部数据」，外部数据均以
+        <Tag color="warning" style={{ margin: '0 4px' }}>
+          外部市场数据 · 来源: SMM
+        </Tag>
+        样式醒目标注，请注意区分，避免将外部数据误作内部结论使用。
+      </span>
+    </div>
   );
 }
