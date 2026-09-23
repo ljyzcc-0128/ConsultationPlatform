@@ -1,0 +1,33 @@
+# CN-01 中国储能网 ESCN（P0，优先级1）
+# 勘察结论（2026-09-18）：纯静态 HTML，列表项为 div.nl-title > a[href*="/news/show-"]，
+# 详情正文在 div.entry，发布时间形如"发布时间：2026-09-14"，无需 Playwright。
+source_code: CN-01
+source_name: 中国储能网 ESCN
+fetch_method: WEB
+entry_url: https://www.escn.com.cn/news/564.html
+language: zh-CN
+pagination: true
+max_pages: 3
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'div.nl-title'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+next_page_selectors:
+  - 'a:contains("下一页")::attr(href)'
+
+title_selectors:
+  - 'h1::text'
+  - 'div.title::text'
+  - 'h2::text'
+body_selectors:
+  - 'div.entry ::text'
+date_selectors: []
+date_fallback_regex: '发布时间[:：]\s*([0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2})'
+author_selectors: []
+
+# 手册第七节：UA 使用可识别的标准值，不伪装
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

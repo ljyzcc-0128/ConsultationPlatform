@@ -1,0 +1,33 @@
+# CN-02 广东省水力和新能源发电工程学会（P0，优先级2）
+# 勘察结论（2026-09-18）：列表项为 ul.des-dot-time li（a 内含标题与 div.time16 日期），
+# 详情正文在 div.edit，发布时间形如"发布时间：2026年09月11日"，dateparser 可解析中文日期。
+source_code: CN-02
+source_name: 广东省水力和新能源发电工程学会
+fetch_method: WEB
+entry_url: https://www.gdshe.org/list/7.html
+language: zh-CN
+pagination: true
+max_pages: 3
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'ul.des-dot-time li'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'div.desDot p::text'
+list_date_selector: 'div.time16::text'
+next_page_selectors:
+  - 'a:contains("下一页")::attr(href)'
+  - 'a:contains("下页")::attr(href)'
+
+title_selectors:
+  - 'h1::text'
+  - 'div.desDot p::text'
+body_selectors:
+  - 'div.edit ::text'
+date_selectors: []
+date_fallback_regex: '发布时间[:：]\s*([0-9]{4}年[0-9]{1,2}月[0-9]{1,2}日|[0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2})'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'
