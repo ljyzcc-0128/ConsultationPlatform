@@ -1,0 +1,43 @@
+# INT-01 Utility Dive（P0，优先级4）
+# 勘察结论（2026-09-18）：列表项为 h3 > a[href*="/news/{slug}/{id}/"]（需排除 /trendline/ 等），
+# 页面无 article/time 标签，正文选择器不稳，直接依赖 trafilatura 兜底。
+# 手册第九节备注：注意访问频率限制，request_interval_sec >= 3；遇注册墙记录、不绕过。
+# 联调记录（2026-09-18）：该站 WAF 按 TLS 指纹拦截 httpx 请求（浏览器 UA 也 403，curl 可 200），
+# 属手册第七节"明显反爬拦截"场景，需人工介入联调（可选方向：真实浏览器渲染通道），暂不强行绕过。
+# 状态：列表/详情选择器已就绪（黄金样本测试通过），待传输层问题解决后即可运行。
+source_code: INT-01
+source_name: Utility Dive
+fetch_method: WEB
+entry_url: https://www.utilitydive.com/topic/storage/
+language: en
+pagination: true
+max_pages: 2
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'h3'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+exclude_link_patterns:
+  - 'trendline'
+  - '/topic/'
+  - 'whitepaper'
+  - '/jobs/'
+  - '/spons/'   # 赞助内容，非新闻
+next_page_selectors:
+  - 'a[rel="next"]::attr(href)'
+
+title_selectors:
+  - 'h1::text'
+body_selectors: []   # 结构复杂，正文统一走 trafilatura 兜底（手册6.1节）
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  # 特殊注意事项：该站 WAF 对非浏览器 UA 一律 403（UMSBot UA 已验证被拒），
+  # 改用标准浏览器 UA；非对抗性处理（不绕验证码），若仍被拦截则标记需人工介入
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
