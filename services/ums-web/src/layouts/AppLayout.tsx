@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Select } from 'antd';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../theme/ThemeProvider';
+import { QaRobot } from '../components/QaRobot';
 
 const NAV_ITEMS = [
   { key: '/feed', label: '我的情报' },
@@ -10,8 +11,8 @@ const NAV_ITEMS = [
 ] as const;
 
 /**
- * 应用整体布局（参照设计稿 deepseek_html_20260922_264734.html）。
- * 自定义 navbar + 背景装饰层 + .page 内容区，替代 Ant Design Layout/Header/Menu。
+ * 应用整体布局。自定义 navbar + .page 内容区，替代 Ant Design Layout/Header/Menu。
+ * 工业风视觉（暖白亮色 / 深绿暗色双主题）由全局 theme.css 统一控制。
  */
 export function AppLayout() {
   const { user, logout } = useAuth();
@@ -21,11 +22,6 @@ export function AppLayout() {
 
   return (
     <>
-      {/* 背景装饰层（炫酷版显示） */}
-      <div className="aurora" />
-      <div className="stars" />
-      <div className="scanlines" />
-
       {/* 顶栏 */}
       <nav className="navbar">
         <div className="logo">储能资讯平台</div>
@@ -46,7 +42,7 @@ export function AppLayout() {
             onClick={toggleTheme}
             aria-label="切换主题"
           >
-            切换：{theme === 'cool' ? '极简版' : '炫酷版'}
+            切换：{theme === 'cool' ? '亮色版' : '暗色版'}
           </button>
           <span>{user?.displayName ?? user?.username}</span>
           <Select
@@ -85,6 +81,9 @@ export function AppLayout() {
       <footer className="app-footer">
         储能资讯平台一期 · Jinko ESS · 数据仅供内部参考
       </footer>
+
+      {/* AI 智能问答悬浮机器人（可拖动，登录用户可见） */}
+      <QaRobot />
     </>
   );
 }

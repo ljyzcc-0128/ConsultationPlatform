@@ -340,6 +340,24 @@ export interface SupplierUpdate {
   description: string;
 }
 
+// ---------- AI 智能问答（POST /v1/qa/ask） ----------
+
+export interface QaReference {
+  articleId: string;
+  title: string;
+  sourceName: string;
+  originalUrl: string | null;
+  publishDate: string | null;
+}
+
+export interface QaAnswer {
+  answer: string;
+  mode: 'NEWS' | 'PLATFORM';
+  references: QaReference[];
+  provider: string;
+  model: string;
+}
+
 // ---------- Phase 6.3：采集任务记录 ----------
 
 export interface CrawlTaskRecord {

@@ -26,9 +26,10 @@ async function enableMocking() {
 }
 
 /**
- * 内层 ConfigProvider：根据当前主题设置 antd 的配色算法。
- * - cool 主题：暗色算法
- * - minimal 主题：默认（亮色）算法
+ * 内层 ConfigProvider：按工业风设计系统令牌配置 antd。
+ * - minimal（暖白亮色，默认）：亮色算法 + 深绿主色
+ * - cool（深绿暗色）：暗色算法 + 深绿系底色与青绿主色
+ * 令牌值与 theme.css 的 CSS 变量保持同步。
  */
 function ThemedAntdApp({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
@@ -37,23 +38,26 @@ function ThemedAntdApp({ children }: { children: React.ReactNode }) {
       locale={zhCN}
       theme={{
         algorithm: theme === 'cool' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        // cool 主题下整体提亮：antd 暗色算法默认容器偏黑，这里统一上调底色明度
-        ...(theme === 'cool'
-          ? {
-            token: {
-              colorBgBase: '#1C2547',
-              colorBgContainer: '#232E55',
-              colorBgElevated: '#2A3764',
-              colorBgSpotlight: '#2A3764',
-              colorBorder: '#3D4B7D',
-              colorBorderSecondary: '#313D6B',
-              colorText: '#F1F4FF',
-              colorTextSecondary: '#C6CFEC',
-              colorTextTertiary: '#9AA8D2',
-              colorTextQuaternary: '#7C8AB5',
+        token:
+          theme === 'cool'
+            ? {
+              colorPrimary: '#63bba7',
+              colorBgBase: '#101815',
+              colorBgContainer: '#15201c',
+              colorBgElevated: '#1a2823',
+              colorBgSpotlight: '#1a2823',
+              colorBorder: '#405149',
+              colorBorderSecondary: '#2b3a34',
+              colorText: '#edf4f0',
+              colorTextSecondary: '#a6b3ad',
+              colorTextTertiary: '#8fa098',
+              colorTextQuaternary: '#6d7d74',
+              borderRadius: 10,
+            }
+            : {
+              colorPrimary: '#0f6758',
+              borderRadius: 10,
             },
-          }
-          : {}),
       }}
     >
       <AntdApp>{children}</AntdApp>
