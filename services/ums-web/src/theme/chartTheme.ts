@@ -11,6 +11,8 @@ export interface ChartPalette {
   colors: string[];
   label: string;
   line: string;
+  /** 卡片表面色：用于数据标签描边（白色光晕），双主题各自匹配 */
+  surface: string;
 }
 
 /** 静态兜底色（与 theme.css 的 --chart-* / --sc-m* 令牌保持同步） */
@@ -19,11 +21,13 @@ const FALLBACK: Record<Theme, ChartPalette> = {
     colors: ['#0f6758', '#ed7047', '#268070', '#3e789f', '#775eaa'],
     label: '#66716c',
     line: '#dce3de',
+    surface: '#fbfcf9',
   },
   cool: {
     colors: ['#63bba7', '#ed7047', '#8fd4c4', '#7aa6c9', '#a593cf'],
     label: '#a6b3ad',
     line: '#2b3a34',
+    surface: '#15201c',
   },
 };
 
@@ -81,6 +85,7 @@ export function getChartTheme(theme: Theme): ChartPalette {
     colors: SERIES_TOKENS.map((token, i) => readToken(token, fb.colors[i])),
     label: readToken('--chart-label', fb.label),
     line: readToken('--chart-line', fb.line),
+    surface: readToken('--surface', fb.surface),
   };
   seriesCache.set(theme, palette);
   return palette;
@@ -107,5 +112,6 @@ export function moduleChartPalette(theme: Theme, block: number): ChartPalette {
     colors: [moduleColor, ...base.colors.filter((c) => c.toLowerCase() !== moduleColor.toLowerCase())],
     label: base.label,
     line: base.line,
+    surface: base.surface,
   };
 }

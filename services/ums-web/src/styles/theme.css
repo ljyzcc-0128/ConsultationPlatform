@@ -558,15 +558,6 @@ body.theme-cool {
   color: inherit;
 }
 
-.module-id {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  margin-bottom: 6px;
-  color: var(--module-accent);
-}
-
 .module-heading-row {
   display: flex;
   align-items: center;
@@ -591,13 +582,6 @@ body.theme-cool {
   font-weight: 700;
   line-height: 1.3;
   color: var(--ink);
-}
-
-.module-summary {
-  display: block;
-  margin-top: 3px;
-  font-size: 12.5px;
-  color: var(--muted);
 }
 
 /* 展开箭头：独立圆形控件 */
@@ -651,62 +635,6 @@ body.theme-cool {
   padding: 0 24px 22px;
 }
 
-/* 核心问题 + 二级目录（36% / 64% 双栏，章节展开后先于内容显示） */
-.module-intro {
-  display: grid;
-  grid-template-columns: 36fr 64fr;
-  gap: 8px 26px;
-  padding: 4px 0 18px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 18px;
-}
-
-.module-label {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.module-question {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.7;
-  color: var(--ink);
-}
-
-.module-toc {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 26px;
-}
-
-.module-toc li {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 7px 2px;
-  border-bottom: 1px solid var(--line);
-  font-size: 13px;
-}
-
-.module-toc .toc-no {
-  flex: 0 0 auto;
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--module-accent);
-}
-
-.module-toc .toc-title {
-  color: var(--ink);
-}
-
 /* 模块内工具行（状态筛选 / 来源徽章），空时隐藏 */
 .module-tools {
   display: flex;
@@ -720,120 +648,7 @@ body.theme-cool {
   display: none;
 }
 
-/* ---------- 左侧章节导航 + 内容双栏布局 ---------- */
-.sc-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.module-nav {
-  position: sticky;
-  top: 80px;
-  flex: 0 0 208px;
-  width: 208px;
-  border-radius: 14px;
-  padding: 14px 10px;
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-sm);
-}
-
-.module-nav-title {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  color: var(--muted);
-  padding: 2px 10px 10px;
-}
-
-.module-nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.module-nav-list a {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 13px;
-  color: var(--muted);
-  transition: color 0.2s, background 0.2s;
-}
-
-.module-nav-list a .nav-no {
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.55;
-}
-
-.module-nav-list a:hover {
-  color: var(--ink);
-  background: var(--surface-muted);
-}
-
-.module-nav-list a.active {
-  color: var(--brand-text);
-  background: var(--brand-soft);
-}
-
-.module-nav-list a.active .nav-no {
-  opacity: 1;
-}
-
-.sc-main {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* ---------- 页面工具栏 / 搜索 / 阅读进度条 ---------- */
-.sc-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.search-count {
-  font-size: 12px;
-  white-space: nowrap;
-  color: var(--brand-text);
-}
-
-.page-search.ant-input-affix-wrapper {
-  border-radius: 999px;
-  padding: 4px 14px;
-  background: var(--input-bg);
-  flex: 1 1 210px;
-  max-width: 280px;
-}
-
-.sc-tool-btn {
-  padding: 5px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface-raised);
-  color: var(--ink);
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.2s, color 0.2s;
-}
-
-.sc-tool-btn:hover {
-  border-color: var(--brand);
-  color: var(--brand-text);
-}
-
+/* ---------- 阅读进度条 ---------- */
 .progress-bar {
   position: fixed;
   top: 0;
@@ -852,54 +667,10 @@ body.theme-cool {
   overflow-x: auto;
 }
 
-/* ---------- 响应式：1080px 以下导航转横向吸顶 ---------- */
-@media (max-width: 1080px) {
-  .sc-layout {
-    flex-direction: column;
-  }
-
-  .module-nav {
-    position: sticky;
-    top: 64px;
-    z-index: 15;
-    width: 100%;
-    flex-basis: auto;
-    padding: 8px 10px;
-  }
-
-  .module-nav-title {
-    display: none;
-  }
-
-  .module-nav-list {
-    flex-direction: row;
-    gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .module-nav-list a {
-    white-space: nowrap;
-    padding: 6px 10px;
-  }
-}
-
 /* ---------- 响应式：720px 以下单列化 ---------- */
 @media (max-width: 720px) {
   .page {
     padding: 0 12px;
-  }
-
-  .module-intro {
-    grid-template-columns: 1fr;
-  }
-
-  .module-toc {
-    grid-template-columns: 1fr;
-  }
-
-  .module-summary {
-    display: none;
   }
 
   .module-trigger {
@@ -908,16 +679,6 @@ body.theme-cool {
 
   .module-body-inner {
     padding: 0 16px 16px;
-  }
-
-  .sc-toolbar {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .page-search.ant-input-affix-wrapper {
-    flex: 1 1 100%;
-    max-width: none;
   }
 }
 
@@ -954,13 +715,6 @@ body.theme-cool {
   color: var(--muted);
 }
 
-.indicator-card .ind-hint {
-  font-size: 11px;
-  margin-top: 8px;
-  opacity: 0.5;
-  color: var(--muted);
-}
-
 /* 涨跌语义色（红涨绿跌，双主题各自保证对比度） */
 .ind-trend {
   font-size: 13px;
@@ -972,27 +726,6 @@ body.theme-cool {
 
 .ind-trend.down {
   color: var(--trend-down);
-}
-
-.supplier-card {
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 10px;
-  border: none;
-  border-left: 3px solid var(--line-strong);
-  background: var(--surface-muted);
-}
-
-.supplier-card.risk-high {
-  border-left-color: var(--danger);
-}
-
-.supplier-card.risk-medium {
-  border-left-color: var(--warning);
-}
-
-.supplier-card.risk-low {
-  border-left-color: var(--success);
 }
 
 /* 合规提示（SC-007）：页面唯一强调区块 */
@@ -1527,9 +1260,6 @@ body.theme-cool {
   .theme-switch,
   .app-footer,
   .pill-tabs,
-  .module-nav,
-  .page-search,
-  .sc-toolbar,
   .progress-bar,
   .chevron {
     display: none !important;
@@ -1545,11 +1275,7 @@ body.theme-cool {
     background: #fff;
   }
 
-  /* 供应链看板：打印时展开全部章节，布局还原为单栏 */
-  .sc-layout {
-    display: block;
-  }
-
+  /* 供应链看板：打印时展开全部章节 */
   .module-card {
     box-shadow: none;
     transform: none;
@@ -1563,10 +1289,5 @@ body.theme-cool {
   .module-body-inner {
     overflow: visible !important;
     padding: 0;
-  }
-
-  .module-intro {
-    border-bottom: none;
-    margin-bottom: 12px;
   }
 }
