@@ -13,7 +13,6 @@ export interface NewsItem {
   category: string[];
   summary: string | null;
   duplicateGroupId: string | null;
-  manualReviewStatus: 'Pending' | 'NeedsReview' | 'Approved' | 'Rejected';
 }
 
 export interface NewsAnalysis {
@@ -58,20 +57,6 @@ export interface SourceUpdateBody {
   priority?: string;
   sourceName?: string;
   remark?: string;
-}
-
-export interface ReviewItem {
-  articleId: string;
-  title: string;
-  sourceId: string;
-  sourceName: string;
-  publishDate: string;
-  language: string;
-  category: string | null; // JSON 字符串
-  summary: string | null;
-  reviewStatus: 'Pending' | 'NeedsReview' | 'Approved' | 'Rejected';
-  reviewComment: string | null;
-  updatedAt: string;
 }
 
 export interface AuditLog {
@@ -128,20 +113,10 @@ export const CATEGORY_DICT = [
   'Finance',
 ] as const;
 
-export const REVIEW_STATUS_TEXT: Record<string, string> = {
-  Pending: '待审核',
-  NeedsReview: '需人工复核',
-  Approved: '已通过',
-  Rejected: '已驳回',
-};
-
 export const AUDIT_ACTION_TEXT: Record<string, string> = {
   SOURCE_CREATE: '新增信源',
   SOURCE_UPDATE: '信源配置更新',
   SOURCE_TRIGGER: '手动触发采集',
-  REVIEW_APPROVE: '审核通过',
-  REVIEW_REJECT: '审核驳回',
-  REVIEW_CATEGORY_FIX: '分类修正',
   DLQ_REQUEUE: '死信消息重新入队',
   DLQ_PURGE: '死信队列清空',
   USER_CREATE: '创建用户',

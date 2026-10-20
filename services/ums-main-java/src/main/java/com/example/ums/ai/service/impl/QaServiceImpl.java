@@ -45,14 +45,14 @@ public class QaServiceImpl implements QaService {
     /** 平台使用知识（一期静态内置；二期可迁入配置/知识库） */
     private static final String PLATFORM_KNOWLEDGE = """
             【平台定位】储能资讯平台（UMS）：面向储能行业的一站式资讯情报系统，
-            自动采集多来源行业资讯（政策、市场、供应链、技术等），经 AI 加工与人工审核后发布，
+            自动采集多来源行业资讯（政策、市场、供应链、技术等），经 AI 加工后发布，
             并提供供应链看板与管理后台。
 
             【三大能力】
             1. 资讯情报：AI 自动生成中文三段式摘要（发生了什么→对储能行业意味着什么→对系统集成商意味着什么）
-               与主题分类（BESS、Policy、Supply Chain 等）；人工审核通过后对外展示。
+               与主题分类（BESS、Policy、Supply Chain 等），加工完成后对外展示。
             2. 供应链看板：材料价格、库存、贸易物流、供应商四类数据查询。
-            3. 管理后台：信源管理、内容审核（通过/驳回/调整分类）、用户管理、采集任务调度、
+            3. 管理后台：信源管理、用户管理、采集任务调度、
                死信队列处理、推送管理、审计日志。
 
             【主要接口】
@@ -66,7 +66,7 @@ public class QaServiceImpl implements QaService {
               POST /api/me/read-status/batch（批量已读）、POST /api/me/read-status/reset（重置已读）、
               /api/me/subscriptions（关键词/信源订阅管理，增删改查）。
             - 供应链（需登录）：GET /api/v1/supply-chain/materials|inventory|trade-logistics|suppliers。
-            - 管理后台（需 ADMIN 角色）：/api/v1/admin/**（sources 信源、reviews 审核、users 用户、
+            - 管理后台（需 ADMIN 角色）：/api/v1/admin/**（sources 信源、users 用户、
               tasks 任务、dlq 死信、push 推送、audit-logs 审计、scheduler 调度状态）。
 
             【角色】USER（普通用户，可浏览/搜索/订阅/看供应链）；ADMIN（管理员，另可用管理后台）。""";

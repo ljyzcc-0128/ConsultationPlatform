@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * 资讯详情：列表项全部字段 + 正文 + 政策与影响分析（审核通过/AI 加工后填充，可为空）。
+ * 资讯详情：列表项全部字段 + 正文 + 政策与影响分析（AI 加工后填充，可为空）。
  */
 public record NewsDetailDto(
         String articleId,
@@ -19,7 +19,6 @@ public record NewsDetailDto(
         List<String> category,
         String summary,
         String duplicateGroupId,
-        String manualReviewStatus,
         String body,
         AnalysisDto analysis) {
 

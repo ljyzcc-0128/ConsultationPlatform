@@ -92,7 +92,6 @@ export function ContentDetailPage() {
             </span>
             {data.author && <span>作者：{data.author}</span>}
             <Tag>{data.language === 'en' ? 'English' : '中文'}</Tag>
-            {data.manualReviewStatus === 'Approved' && <Tag color="green">人工审核通过</Tag>}
             {data.duplicateGroupId && <Tag color="orange">疑似重复</Tag>}
           </div>
           {data.category.length > 0 && (

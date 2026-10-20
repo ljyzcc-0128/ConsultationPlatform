@@ -20,11 +20,9 @@ public interface NewsQueryService {
      * @param language 语言筛选（可空，BCP 47）
      * @param dateFrom 发布日期起（含，可空）
      * @param dateTo   发布日期止（含，可空）
-     * @param reviewStatus 审核状态筛选（可空；一期无审核流程默认不筛）
      */
     NewsPageDto listTimeline(String cursor, int limit, String sourceId, String category,
-                             String language, LocalDate dateFrom, LocalDate dateTo,
-                             String reviewStatus);
+                             String language, LocalDate dateFrom, LocalDate dateTo);
 
     /** 详情（主表 + 正文 + 政策分析）；不存在返回 null */
     NewsDetailDto getDetail(String articleId);

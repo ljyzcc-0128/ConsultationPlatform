@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * cp_news_analysis 政策与影响分析表（1:1，审核通过/AI 加工后填充，一期暂空）。
+ * cp_news_analysis 政策与影响分析表（1:1，AI 加工后填充，一期暂空）。
  */
 @TableName("cp_news_analysis")
 public class CpNewsAnalysis {

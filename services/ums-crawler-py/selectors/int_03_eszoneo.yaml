@@ -1,0 +1,36 @@
+# INT-03 eszoneo（P0，优先级5）
+# 勘察结论（2026-09-18）：列表页为 JS 渲染（静态 HTML 无任何文章链接，仅导航），
+# 需要 Playwright 渲染后再解析；详情页结构待联调后补充选择器（手册第五节 SOP / 第九节备注）。
+# 手册第九节备注：可能含非英语内容，language 不写死，按正文检测。
+source_code: INT-03
+source_name: eszoneo
+fetch_method: WEB
+entry_url: https://eszoneo.com/intel/policy-updates
+language: en
+detect_language: true
+js_render: true          # 需 playwright install chromium
+pagination: false
+max_pages: 1
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 60  # 联调记录：站点响应慢且不稳定（一次45s可加载，一次60s超时），超时不宜过紧
+
+# 以下选择器为初始占位，待 Playwright 渲染后按真实结构修订
+list_item_selector: 'main a[href*="/intel/"]'
+detail_link_selector: '::attr(href)'
+title_selector: '::text'
+exclude_link_patterns:
+  - '/intel/$'
+  - '/search/'
+
+title_selectors:
+  - 'h1::text'
+body_selectors: []       # 待联调，先走 trafilatura 兜底
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

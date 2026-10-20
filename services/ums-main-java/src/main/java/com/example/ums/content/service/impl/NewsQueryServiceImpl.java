@@ -31,9 +31,9 @@ public class NewsQueryServiceImpl implements NewsQueryService {
     private final ObjectMapper objectMapper;
 
     public NewsQueryServiceImpl(NewsMapper newsMapper,
-                                NewsContentMapper newsContentMapper,
-                                NewsAnalysisMapper newsAnalysisMapper,
-                                ObjectMapper objectMapper) {
+            NewsContentMapper newsContentMapper,
+            NewsAnalysisMapper newsAnalysisMapper,
+            ObjectMapper objectMapper) {
         this.newsMapper = newsMapper;
         this.newsContentMapper = newsContentMapper;
         this.newsAnalysisMapper = newsAnalysisMapper;
@@ -42,17 +42,16 @@ public class NewsQueryServiceImpl implements NewsQueryService {
 
     @Override
     public NewsPageDto listTimeline(String cursor, int limit, String sourceId, String category,
-                                    String language, LocalDate dateFrom, LocalDate dateTo,
-                                    String reviewStatus) {
+            String language, LocalDate dateFrom, LocalDate dateTo) {
         int pageSize = normalizeLimit(limit);
         LambdaQueryWrapper<CpNews> wrapper = new LambdaQueryWrapper<CpNews>()
-                .orderByDesc(CpNews::getPublishDate)   // NULL 默认排 DESC 末尾（待审数据）
-                .orderByDesc(CpNews::getArticleId);    // 同日复合游标稳定排序
+                .orderByDesc(CpNews::getPublishDate) // NULL 默认排 DESC 末尾（无发布日期数据）
+                .orderByDesc(CpNews::getArticleId); // 同日复合游标稳定排序
         if (cursor != null && !cursor.isBlank()) {
             CursorCodec.Cursor c = CursorCodec.decode(cursor);
             wrapper.and(w -> w.lt(CpNews::getPublishDate, c.publishDate())
                     .or(w2 -> w2.eq(CpNews::getPublishDate, c.publishDate())
-                                .lt(CpNews::getArticleId, c.articleId())));
+                            .lt(CpNews::getArticleId, c.articleId())));
         }
         if (sourceId != null && !sourceId.isBlank()) {
             wrapper.eq(CpNews::getSourceId, sourceId.trim());
@@ -70,9 +69,6 @@ public class NewsQueryServiceImpl implements NewsQueryService {
         if (dateTo != null) {
             wrapper.le(CpNews::getPublishDate, dateTo);
         }
-        if (reviewStatus != null && !reviewStatus.isBlank()) {
-            wrapper.eq(CpNews::getManualReviewStatus, reviewStatus.trim());
-        }
 
         // limit+1 探测是否还有下一页
         List<CpNews> rows = newsMapper.selectList(wrapper.last("LIMIT " + (pageSize + 1)));
@@ -82,7 +78,7 @@ public class NewsQueryServiceImpl implements NewsQueryService {
         List<NewsListItemDto> items = page.stream().map(this::toListItem).toList();
         String nextCursor = hasMore && !page.isEmpty()
                 ? CursorCodec.encode(page.get(page.size() - 1).getPublishDate(),
-                                     page.get(page.size() - 1).getArticleId())
+                        page.get(page.size() - 1).getArticleId())
                 : null;
         return new NewsPageDto(items, nextCursor, hasMore);
     }
@@ -104,7 +100,7 @@ public class NewsQueryServiceImpl implements NewsQueryService {
         return new NewsDetailDto(base.articleId(), base.sourceId(), base.sourceName(),
                 base.title(), base.originalUrl(), base.publishDate(), base.publishTime(),
                 base.author(), base.language(), base.category(), base.summary(),
-                base.duplicateGroupId(), base.manualReviewStatus(),
+                base.duplicateGroupId(),
                 content != null ? content.getBody() : null, analysisDto);
     }
 
@@ -112,7 +108,7 @@ public class NewsQueryServiceImpl implements NewsQueryService {
         return new NewsListItemDto(n.getArticleId(), n.getSourceId(), n.getSourceName(),
                 n.getTitle(), n.getOriginalUrl(), n.getPublishDate(), n.getPublishTime(),
                 n.getAuthor(), n.getLanguage(), parseCategory(n.getCategory()),
-                n.getSummary(), n.getDuplicateGroupId(), n.getManualReviewStatus());
+                n.getSummary(), n.getDuplicateGroupId());
     }
 
     /** category JSON 文本（["BESS","Policy"]）→ List；空或格式错返回 null */
@@ -121,7 +117,8 @@ public class NewsQueryServiceImpl implements NewsQueryService {
             return null;
         }
         try {
-            return objectMapper.readValue(categoryJson, new TypeReference<List<String>>() {});
+            return objectMapper.readValue(categoryJson, new TypeReference<List<String>>() {
+            });
         } catch (Exception e) {
             return null;
         }

@@ -19,6 +19,5 @@ public record NewsListItemDto(
         String language,
         List<String> category,
         String summary,
-        String duplicateGroupId,
-        String manualReviewStatus) {
+        String duplicateGroupId) {
 }

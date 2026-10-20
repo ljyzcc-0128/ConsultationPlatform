@@ -1,0 +1,532 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>中国储能网 - 政策与解读</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link rel="stylesheet" type="text/css" href="/css/pagination.css" />
+<link rel="stylesheet" type="text/css" href="/templates/ESCN20260910/css/style.css?202111202" />
+<script type="text/javascript" charset="utf-8" src="/scripts/jquery/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/scripts/jquery/jquery.lazyload.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/templates/ESCN20260910/js/common.js?20181009"></script>
+<script>
+    $(function () {
+        //图片延迟加载
+        $("img.pic").lazyload();
+        $("img.pic1").lazyload();
+        $("img.pic2").lazyload();
+        
+    });
+</script>
+     <style>
+        .sidebar-box .txt-list li{margin:0;font-size:14px;overflow:initial;white-space:initial}
+        .right-260{display:inline-block;float:none;vertical-align:top;}
+        .left-auto{display:inline-block;width:925px;margin:0px;vertical-align:top;}
+        .footer{margin-top:0px !important}
+        .bg-wrap{border-top:1px solid #f2f2f2;}       
+        .n-onelist li {
+    display: flex;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom:2px solid #2370b8;
+}
+        .nl-date { width: 84px; text-align: center; color: #999; border-right: 1px solid #eee;}
+.nl-date em { display: block; font-size: 28px; color: #999; line-height: 1; }
+.nl-date span {     width: 100%;
+    line-height: 18px;
+    display: block;
+    font-size: 12px;
+    margin-top: 6px;
+    color: #999;
+    text-align: center; }
+
+.nl-title { flex: 1; padding-left: 12px; }
+.nl-title a { color: #333; font-size: 16px; line-height: 20px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;font-weight: bold; }
+.nl-title a:hover { color: #1F72B4; }
+.nl-title .item-desc {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 10px;
+    line-height: 1.8;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.page-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    padding: 26px 0 10px;
+    color:#2370b8;
+}
+    </style>
+</head>
+
+<body id="news">
+<!--页面头部-->
+ <div class="head-top">
+    <div class="head-topnav">
+        <div class="htleft">中国储能网欢迎您！</div>
+        <div class="htright"><a href="https://www.desn.com.cn/" target="_blank">数字储能网</a> | <a href="http://www.cies.net.cn/" target="_blank">中国国际储能大会</a> </div>
+    </div>
+</div>
+<div class="header">
+    <div class="head-nav">
+        <div class="section">
+            <div class="logo">
+                <a href="/index.html"><img src="/templates/ESCN20260910/images/logo2026.png" /></a>
+            </div>
+
+            <div class="search-b">
+                <div class="search-b1">
+                    <div class="search-box">
+                        <div class="input-box">
+                            <input id="keywords" name="keywords" type="text" onkeydown="if(event.keyCode==13){SiteSearch('/search.html', '#keywords');return false};" placeholder="请输入搜索内容" x-webkit-speech="" />
+                        </div>
+                    </div>
+                    <a href="javascript:;" onclick="SiteSearch('/search.html', '#keywords');">搜索</a>
+                </div>
+            </div>
+        </div>
+        <div class="nav-box main-nav">
+            <ul>
+                <li class="indexsel"><a href="/index.html">首页</a></li>
+                <li>
+                    <a href="/news/829.html">政策标准</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/830.html">国家政策</a>
+                        <a href="/news/831.html">地方政策</a>
+                        <a href="/news/832.html">国际标准</a>
+                        <a href="/news/833.html">国家标准</a>
+                        <a href="/news/834.html">行业标准</a>
+                        <a href="/news/835.html">团体标准</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/836.html">产业资讯</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/837.html">国内动态</a>
+                        <a href="/news/838.html">国际动态</a>
+                        <a href="/news/839.html">招投标</a>
+                        <a href="/news/840.html">产业观察</a>
+                        <a href="/news/841.html">电网动态</a>
+                        <a href="/news/842.html">发电动态</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/795.html">物理储能</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/773.html">抽水储能</a>
+                        <a href="/news/598.html">压缩空气储能</a>
+                        <a href="/news/596.html">飞轮储能</a>
+                        <a href="/news/595.html">重力储能</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/599.html">电化学储能</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/700.html">锂离子电池</a>
+                        <a href="/news/602.html">钠离子电池</a>
+                        <a href="/news/604.html">液流电池</a>
+                        <a href="/news/601.html">全固态电池</a>
+                        <a href="/news/603.html">铅碳电池</a>
+                        <a href="/news/843.html">钠盐电池</a>
+                        <a href="/news/783.html">新型电池</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/797.html">电磁储能</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/682.html">超级电容器</a>
+                        <a href="/news/803.html">超导储能</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/798.html">热储能</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/620.html">熔盐储热</a>
+                        <a href="/news/804.html">冰蓄冷</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/616.html">氢储能</a>
+                </li>
+                <li>
+                    <a href="/news/799.html">社会责任</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/765.html">科技创新</a>
+                        <a href="/news/547.html">ESG</a>
+                        <a href="/news/801.html">零碳工厂</a>
+                        <a href="/news/569.html">回收与再利用</a>
+                        <a href="/news/802.html">社会公益</a>
+                    </div>
+                </li>
+                <li>
+                    <a href="/news/751.html">产业资本</a>
+                    <div class="dropdown cols-3">
+                        <a href="/news/821.html">REITs</a>
+                        <a href="/news/822.html">融资租赁</a>
+                        <a href="/news/753.html">产业基金</a>
+                        <a href="/news/752.html">绿色信贷</a>
+                        <a href="/news/792.html">绿色债卷</a>
+                    </div>
+                </li>
+                <li><a href="/news/617.html">主要活动</a></li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<!--/页面头部-->
+<div class="section clearfix yinying">
+<!--当前位置-->
+
+
+    <div class="location">
+        <img src="/images/escn2026/home.png" style="vertical-align: sub;" /> <span>当前位置：</span>
+        <a href="/index.html">首页</a>
+        &gt;<a href="/news/805-1.html">2026停用栏目</a>&gt;<a href="/news/564-1.html">政策与解读</a>
+    </div>
+    <div class="navLists">
+         
+    </div>
+<!--/当前位置-->
+    <div class="bg-wrap">
+        <h2 class="page-title" id="pageTitle">政策与解读</h2>
+        <ul class="n-onelist">
+        <!--取得一个分页DataTable-->
+        
+            <li>
+                <div class="nl-date">
+  <em>14</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2270446.html">李强主持召开国务院常务会议  加快绿电直连、源网荷储等项目落地</a>
+    <p class="item-desc">
+        中国储能网讯：李强主持召开国务院常务会议对加强安全生产工作作出进一步部署研究算力网建设有关工作研究全面系统推进老旧水库改造提升有关工作听取贯彻落实全国教育大会精神加快建设教育强国情况汇报审议通过《基金会管理条例（修订草案）》国务院总理李强9月11日主持召开国务…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>11</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2270032.html">包含12项新型储能技术装备！国家能源局发布第六批能源领域首台（套）重大技术装备清单公示</a>
+    <p class="item-desc">
+        中国储能网讯：日前，国家能源局综合司发布关于公示第六批能源领域首台（套）重大技术装备清单的通知。通知表示，经组织专家评审和复核，拟将“16MW级漂浮式海上风力发电机组”等90项技术装备列入第六批能源领域首台（套）重大技术装备清单。其中，涉及新型储能技术装备清单如…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>11</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2269933.html">两部门：行业协会等可以在国家发展改革委、市场监管总局和行业主管部门指导下测算行业平均成本</a>
+    <p class="item-desc">
+        中国储能网讯：国家发展改革委、市场监管总局近日联合印发《关于重要工业品低价无序竞争成本核算有关事项的通知》（以下简称《通知》）。国家发展改革委有关负责人表示，《通知》坚持目标导向、问题导向，聚焦重要工业品生产领域低价无序竞争成本核算问题，对经营者生产成本的…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>11</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2269915.html">安徽发改委发布《关于电网侧独立新型储能容量电价有关事项的通知（征求意见稿）》</a>
+    <p class="item-desc">
+        中国储能网讯：9月4日，安徽发改委关于公开征求《关于电网侧独立新型储能容量电价有关事项的通知（征求意见稿）》意见的公告发布。适用范围对服务于安徽电网安全运行、未参与配储（含租赁、自建）的电网侧独立新型储能电站，可按规定给予容量电价补偿，并实行清单制管理。项目…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>10</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2269637.html">河北省开展村镇微能网建设试点申报</a>
+    <p class="item-desc">
+        中国储能网讯：（记者宋平）为推动我省村镇微能网建设试点科学有序开展，探索农村能源革命新路径、新模式，近日，省发展改革委开展村镇微能网建设试点申报工作。试点项目包括以满足村镇工商业用能需求为主的综合微能网、以满足农村生产生活用能需求为主的村镇微能网（群）和边…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>07</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2269006.html">江苏省发改委印发《关于做好电网侧新型储能项目支持性政策衔接工作的通知》</a>
+    <p class="item-desc">
+        中国储能网讯：9月3日，江苏电力交易中心转发《省发展改革委关于做好电网侧新型储能项目支持性政策衔接工作的通知》，《通知》提到，对属于“十四五”省级规划规模内的电网侧新型储能项目，继续延用《关于加快推动我省新型储能项目高质量发展的若干措施》(苏发改能源发〔2023〕…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>07</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268926.html">李强签署国务院令，新型储能等主体纳入《电力安全事故应急处置和调查处理条例》</a>
+    <p class="item-desc">
+        中国储能网讯：2026年8月30日，国务院总理李强签署第845号国务院令，公布修订后的《电力安全事故应急处置和调查处理条例》（以下简称《条例》），自2027年1月1日起施行。《条例》主要从强化电力安全事故预防、调整完善事故等级划分标准、明确新型并网主体的电力安全责任、健全…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>02</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268557.html">8月储能政策：新型电力系统“十五五”规划落地 独立储能排查整顿与算电协同成新看点</a>
+    <p class="item-desc">
+        国家级政策8项，地方层面政策96项。
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>02</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268482.html">浙江省发布关于电网侧独立新型储能参与电力市场的通知（征求意见稿）</a>
+    <p class="item-desc">
+        中国储能网讯：8月27日，浙江电力交易中心发布关于电网侧独立新型储能参与电力市场的通知（征求意见稿）。征求意见稿表示，已进入商业运营的统调电网侧独立新型储能(以下简称统调电网侧储能)参与现货电能量市场和调频辅助服务市场。已进入商业运营的非统调电网侧独立新型储能(…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>02</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268444.html">国家能源局：加快研发应用长时储能等电网新技术</a>
+    <p class="item-desc">
+        中国储能网讯：9月1日，国家能源局召开新型电网建设工作部署会。国家能源局党组书记、局长王宏志出席会议并讲话。会议系统总结了我国电网发展成效，分析研判新形势新要求，全面部署新型电网建设重大任务。会议指出，电网是国家重大网络基础设施，事关经济社会发展和能源安全。…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>02</em>
+  <span>2026-09</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268429.html">新型储能制造示范园区2个，示范企业14个！工信部公布第一批国家新兴产业发展示范基地名单</a>
+    <p class="item-desc">
+        中国储能网讯：9月1日，工业和信息化部规划司发布《第一批国家新兴产业发展示范基地创建对象初步名单公示》，新型储能制造作为十大重点创建领域之一，相关示范园区、示范企业进入初步创建对象名单，将为我国新型储能产业集群高质量发展提供重要载体支撑。公示时间为2026年9月1…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>31</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268067.html">《新疆电网侧独立新型储能最大放电功率认定管理服务指引1.0版（征求意见稿）》发布</a>
+    <p class="item-desc">
+        中国储能网讯：2026年8月26日，新疆电力交易中心发布《新疆电网侧独立新型储能最大放电功率认定管理服务指引1.0版（征求意见稿）》，本指引适用于纳入容量电价机制清单的电网侧独立新型储能电站。每月20日前，纳入独立储能容量电价机制清单的电网侧独立新型储能电站需通过网厂…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>31</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268049.html">国家算力互联互通区域节点建设名单公布</a>
+    <p class="item-desc">
+        中国储能网讯：关于公布国家算力互联互通区域节点建设名单的通知工信厅信管函〔2026〕404号各省、自治区、直辖市通信管理局，各省、自治区、直辖市及新疆生产建设兵团工业和信息化主管部门，中国信息通信研究院：按照《工业和信息化部办公厅关于组织开展国家算力互联互通节点建…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>31</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268045.html">山东省发改委印发《关于加快推动新能源场站配建储能高质量发展的通知》</a>
+    <p class="item-desc">
+        中国储能网讯：8月27日，山 东 省 发 展 和 改 革 委 员 会、山东省能源局、国家能源局山东监管办公室、国 网 山 东 省 电 力 公 司印发《关于加快推动新能源场站配建储能高质量发展的通知》（以下简称“通知”）。《通知》明确在运、纳规光伏和风电场站新增配储的，配建储能总…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>28</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2268036.html">重庆铜梁支持新型储能发展扶持项目申报</a>
+    <p class="item-desc">
+        中国储能网讯：8月27日，重庆市铜梁区经济和信息化委员会发布《关于2026年铜梁区支持新型储能发展扶持项目申报工作的通知》，《通知》提到，用户侧储能项目扶持中，自项目申报当年起（含当年），按上一自然年（1月1日—12月31日）实际储能放电量给予项目投资方0.5元/千瓦时的资…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>28</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2267980.html">电池消费税政策明确：储能系统不需要缴纳消费税</a>
+    <p class="item-desc">
+        中国储能网讯：8月27日，国家税务总局网站发布“消费税政策即问即答之三”，进一步明确电池消费税有关征管问题。其中，储能系统是利用电池生产的成套电力设备，不属于《电池消费税征收范围注释》中的应税电池产品，不需要缴纳消费税。充电宝是使用电池生产、用于特定目的的电源…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>26</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2267665.html">国家电网：“十五五”经营区新增新型储能装机1.4亿千瓦</a>
+    <p class="item-desc">
+        中国储能网讯：8月25日，国家电网发布《助力国家“十五五”碳达峰目标实现若干举措》。《若干措施》提出7个方面、20项措施，以实干实绩为实现碳达峰目标作出国网贡献。在推动能源电力结构转型方面，《若干措施》表示，加强抽水蓄能、新型储能调节能力建设。加快新疆哈密、吉林…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>26</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2267601.html">国家发展改革委召开“六网协同”协调推进工作会 研究“六张网”投融资机制和支持政策</a>
+    <p class="item-desc">
+        中国储能网讯：2026年8月25日，国家发展改革委党组成员、副主任岳修虎同志主持召开“六网协同”协调推进工作会，研究“六张网”投融资机制和支持政策。会议专题研究完善“六张网”多元化投融资模式，分类细化财政、金融、投资、价格等支持政策，创新政策工具，优化政策组合，推…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>17</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2266342.html">工信部印发《安全应急装备产业发展“十五五”规划》</a>
+    <p class="item-desc">
+        中国储能网讯：8月13日，工信部、应急管理部联合发布《安全应急装备产业发展“十五五”规划》（以下简称《规划》）。《规划》从加强产业创新、促进装备推广应用、培育壮大产业主体、优化产业生态4个方面，细化提出15项具体任务，部署5个专栏。预计到2030年，重点领域产业规模达…
+    </p>
+</div>
+            </li>
+        
+            <li>
+                <div class="nl-date">
+  <em>14</em>
+  <span>2026-08</span>
+</div>
+<div class="nl-title">
+  <a href="/news/show-2266044.html">辽宁省：到2027年，全省新型储能规模达到500万千瓦以上</a>
+    <p class="item-desc">
+        中国储能网讯：近日，辽宁省人民政府发布关于支持新型储能健康发展的通知，明确，到2027年，全省新型储能规模达到500万千瓦以上。推动液流电池、压缩空气、飞轮、锂电等新型储能规模化发展，支持熔盐储能、氢储能等储能试点示范。推进大型独立储能建设。在新能源富集地区和电力…
+    </p>
+</div>
+            </li>
+        
+        </ul>
+            
+        <!--页码列表-->
+        <div class="page-box">
+            <div class="digg"><span>共5069记录</span><span class="disabled">«上一页</span><span class="current">1</span><a href="/news/564-2.html">2</a><a href="/news/564-3.html">3</a><a href="/news/564-4.html">4</a><a href="/news/564-5.html">5</a><a href="/news/564-6.html">6</a><a href="/news/564-7.html">7</a><a href="/news/564-8.html">8</a><a href="/news/564-9.html">9</a><a href="/news/564-10.html">10</a><a href="/news/564-11.html">11</a><a href="/news/564-12.html">12</a><a href="/news/564-13.html">13</a><a href="/news/564-14.html">14</a><span>...</span><a href="/news/564-254.html">254</a><a href="/news/564-2.html">下一页»</a></div>
+        </div>
+        <!--/页码列表-->
+            
+    </div>
+
+
+</div>
+
+<!--页面底部-->
+<div class="footer">
+    <div class="section">
+        <div class="foot-box">
+            <div class="copyright">
+              
+                  
+                <p>版权所有：中国储能网© Copyright 2009 - 2026. All Rights 未经授权，禁止复制或建立镜像</p>
+             
+                <p>新闻和版权信息联系电话：010-88337719、010-88337717</p>
+                
+                <p> 
+                   <a href="/content/about.html">中国储能网</a>
+                   <a href="/content/contact.html">联系我们</a>
+                   <a href="/content/mian.html">免责声明</a>
+                  <a href="/content/lower.html">版权声明</a>
+                   <a href="/content/pin.html">诚聘英才</a>
+                </p>
+                 <p>广告热线：010-88337719、010-88337717</p>
+                  <p>联系地址：北京市西城区阜成门外大街1号四川大厦东塔楼30层</p>
+            </div>
+        </div>
+        
+    </div>
+    <div class="foot-nav">
+        <div class="section" style="text-align:center;">
+            <p><a href="https://beian.miit.gov.cn/" target="_blank">京ICP备12023756号-1</a>　　　<img class="foot-ga" src="/images/gongan.png"><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010202010553" target="_blank">京公网安备11010202010553</a>　　　<a href="https://www.12377.cn/" target="_blank">违法和不良信息举报电话</a></p>
+        </div>
+    </div>
+</div>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?45fa60aaece590004585469736c7f24b";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+ <script>
+  (function () {
+    function autoZoom() {
+      var w = window.innerWidth || document.documentElement.clientWidth;
+      if (w > 1200) {
+        document.body.style.zoom = ((w * 0.8) / 1200).toFixed(4);
+      } else {
+        document.body.style.zoom = 1;
+      }
+    }
+    window.addEventListener('resize', autoZoom);
+    autoZoom();
+  })();
+  </script>
+
+<!--/页面底部-->
+</body>
+</html>

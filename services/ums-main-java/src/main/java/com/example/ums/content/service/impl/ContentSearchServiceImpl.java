@@ -44,7 +44,6 @@ public class ContentSearchServiceImpl implements ContentSearchService {
     public NewsPageDto search(String q, String cursor, int limit) {
         int pageSize = normalizeLimit(limit);
         LambdaQueryWrapper<CpNews> wrapper = new LambdaQueryWrapper<CpNews>()
-                .eq(CpNews::getManualReviewStatus, "Approved")
                 .orderByDesc(CpNews::getPublishDate)
                 .orderByDesc(CpNews::getArticleId);
 
@@ -85,7 +84,6 @@ public class ContentSearchServiceImpl implements ContentSearchService {
             LambdaQueryWrapper<CpNews> dupWrapper = new LambdaQueryWrapper<CpNews>()
                     .eq(CpNews::getDuplicateGroupId, source.getDuplicateGroupId())
                     .ne(CpNews::getArticleId, articleId)
-                    .eq(CpNews::getManualReviewStatus, "Approved")
                     .orderByDesc(CpNews::getPublishDate)
                     .last("LIMIT " + MAX_RELATED);
             List<CpNews> dupNews = newsMapper.selectList(dupWrapper);
@@ -99,7 +97,6 @@ public class ContentSearchServiceImpl implements ContentSearchService {
         // 2. 不足 MAX_RELATED 条时按同 category 补充（NORMAL 相关度）
         if (result.size() < MAX_RELATED && source.getCategory() != null) {
             LambdaQueryWrapper<CpNews> catWrapper = new LambdaQueryWrapper<CpNews>()
-                    .eq(CpNews::getManualReviewStatus, "Approved")
                     .ne(CpNews::getArticleId, articleId)
                     .notIn(!excludeIds.isEmpty(), CpNews::getArticleId, excludeIds)
                     .apply("JSON_CONTAINS(category, {0})", "\"" + parseFirstCategory(source.getCategory()) + "\"")
@@ -130,7 +127,7 @@ public class ContentSearchServiceImpl implements ContentSearchService {
         return new NewsListItemDto(n.getArticleId(), n.getSourceId(), n.getSourceName(),
                 n.getTitle(), n.getOriginalUrl(), n.getPublishDate(), n.getPublishTime(),
                 n.getAuthor(), n.getLanguage(), parseCategory(n.getCategory()),
-                n.getSummary(), n.getDuplicateGroupId(), n.getManualReviewStatus());
+                n.getSummary(), n.getDuplicateGroupId());
     }
 
     /** category JSON 文本（["BESS","Policy"]）→ List；空或格式错返回 null */

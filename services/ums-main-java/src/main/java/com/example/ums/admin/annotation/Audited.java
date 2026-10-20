@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Audited {
 
-    /** 操作类型，如 SOURCE_UPDATE / REVIEW_APPROVE */
+    /** 操作类型，如 SOURCE_UPDATE / DLQ_REQUEUE */
     String action();
 
     /** 对象类型，如 cp_source / cp_news / dlq */

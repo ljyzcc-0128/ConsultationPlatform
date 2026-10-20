@@ -40,11 +40,10 @@ public class NewsQueryController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String language,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
-            @RequestParam(required = false) String reviewStatus) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo) {
         try {
             return newsQueryService.listTimeline(cursor, limit, sourceId, category,
-                    language, dateFrom, dateTo, reviewStatus);
+                    language, dateFrom, dateTo);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }

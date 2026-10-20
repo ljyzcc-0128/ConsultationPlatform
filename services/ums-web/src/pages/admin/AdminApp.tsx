@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SourcesPage } from './SourcesPage';
 import { TasksPage } from './TasksPage';
-import { ContentReviewPage } from './ContentReviewPage';
 import { UsersPage } from './UsersPage';
 import { PushPage } from './PushPage';
 import { AuditLogsPage } from './AuditLogsPage';
@@ -16,7 +15,6 @@ export default function AdminApp() {
         <Route index element={<Navigate to="sources" replace />} />
         <Route path="sources" element={<SourcesPage />} />
         <Route path="tasks" element={<TasksPage />} />
-        <Route path="content-review" element={<ContentReviewPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="push" element={<PushPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />

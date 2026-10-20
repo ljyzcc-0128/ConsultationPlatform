@@ -13,10 +13,10 @@ import java.time.LocalDateTime;
  * cp_news 资讯主表实体（采集侧字段，MyBatis-Plus 映射）。
  *
  * - articleId 为带横线 UUID（CHAR(36)），IdType.INPUT 由业务代码生成
- *   （不用 ASSIGN_UUID：其生成 32 位无横线串，与表结构不符）
+ * （不用 ASSIGN_UUID：其生成 32 位无横线串，与表结构不符）
  * - sourceName 标记 NEVER：重抓更新时保留首次入库快照
  * - updateById 默认 NOT_NULL 策略：null 字段跳过——与原手写
- *   COALESCE(新值, 旧值) 语义等价（publish_time/author 缺失不清空）
+ * COALESCE(新值, 旧值) 语义等价（publish_time/author 缺失不清空）
  */
 @TableName("cp_news")
 public class CpNews {
@@ -50,68 +50,143 @@ public class CpNews {
     /** 跨源同事件/同内容聚类ID；未归组为NULL */
     private String duplicateGroupId;
 
-    /** 人工审核状态：Pending/NeedsReview/Approved/Rejected */
-    private String manualReviewStatus;
-
-    /** 审核备注/驳回原因（V4 新增，管理后台填写） */
-    private String reviewComment;
-
     /** DB 自动维护（DEFAULT/ON UPDATE），仅查询映射用 */
     @TableField(insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
     private LocalDateTime updatedAt;
 
-    public String getArticleId() { return articleId; }
-    public void setArticleId(String articleId) { this.articleId = articleId; }
+    public String getArticleId() {
+        return articleId;
+    }
 
-    public String getSourceId() { return sourceId; }
-    public void setSourceId(String sourceId) { this.sourceId = sourceId; }
+    public void setArticleId(String articleId) {
+        this.articleId = articleId;
+    }
 
-    public String getSourceName() { return sourceName; }
-    public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+    public String getSourceId() {
+        return sourceId;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
 
-    public String getOriginalUrl() { return originalUrl; }
-    public void setOriginalUrl(String originalUrl) { this.originalUrl = originalUrl; }
+    public String getSourceName() {
+        return sourceName;
+    }
 
-    public String getUrlHash() { return urlHash; }
-    public void setUrlHash(String urlHash) { this.urlHash = urlHash; }
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
 
-    public LocalDate getPublishDate() { return publishDate; }
-    public void setPublishDate(LocalDate publishDate) { this.publishDate = publishDate; }
+    public String getTitle() {
+        return title;
+    }
 
-    public LocalDateTime getPublishTime() { return publishTime; }
-    public void setPublishTime(LocalDateTime publishTime) { this.publishTime = publishTime; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public LocalDateTime getCrawlDate() { return crawlDate; }
-    public void setCrawlDate(LocalDateTime crawlDate) { this.crawlDate = crawlDate; }
+    public String getOriginalUrl() {
+        return originalUrl;
+    }
 
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
+    public void setOriginalUrl(String originalUrl) {
+        this.originalUrl = originalUrl;
+    }
 
-    public String getLanguage() { return language; }
-    public void setLanguage(String language) { this.language = language; }
+    public String getUrlHash() {
+        return urlHash;
+    }
 
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String taskId) { this.taskId = taskId; }
+    public void setUrlHash(String urlHash) {
+        this.urlHash = urlHash;
+    }
 
-    public String getSummary() { return summary; }
-    public void setSummary(String summary) { this.summary = summary; }
+    public LocalDate getPublishDate() {
+        return publishDate;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public void setPublishDate(LocalDate publishDate) {
+        this.publishDate = publishDate;
+    }
 
-    public String getContentFingerprint() { return contentFingerprint; }
-    public void setContentFingerprint(String contentFingerprint) { this.contentFingerprint = contentFingerprint; }
+    public LocalDateTime getPublishTime() {
+        return publishTime;
+    }
 
-    public String getDuplicateGroupId() { return duplicateGroupId; }
-    public void setDuplicateGroupId(String duplicateGroupId) { this.duplicateGroupId = duplicateGroupId; }
+    public void setPublishTime(LocalDateTime publishTime) {
+        this.publishTime = publishTime;
+    }
 
-    public String getManualReviewStatus() { return manualReviewStatus; }
-    public void setManualReviewStatus(String manualReviewStatus) { this.manualReviewStatus = manualReviewStatus; }
-    public String getReviewComment() { return reviewComment; }
-    public void setReviewComment(String reviewComment) { this.reviewComment = reviewComment; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getCrawlDate() {
+        return crawlDate;
+    }
+
+    public void setCrawlDate(LocalDateTime crawlDate) {
+        this.crawlDate = crawlDate;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getContentFingerprint() {
+        return contentFingerprint;
+    }
+
+    public void setContentFingerprint(String contentFingerprint) {
+        this.contentFingerprint = contentFingerprint;
+    }
+
+    public String getDuplicateGroupId() {
+        return duplicateGroupId;
+    }
+
+    public void setDuplicateGroupId(String duplicateGroupId) {
+        this.duplicateGroupId = duplicateGroupId;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

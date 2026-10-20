@@ -42,9 +42,9 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     public List<FeedItemDto> listFeed(String userId, String tab) {
-        // 1. 取已审核资讯（第一页 20 条）
+        // 1. 取最新资讯（第一页 20 条，AI 加工后直接展示）
         List<NewsListItemDto> allNews = newsQueryService
-                .listTimeline(null, 20, null, null, null, null, null, "Approved")
+                .listTimeline(null, 20, null, null, null, null, null)
                 .items();
 
         // 2. 取重大变化事件关联的 articleId 集合（按检测时间倒序）

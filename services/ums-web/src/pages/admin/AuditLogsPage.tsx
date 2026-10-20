@@ -49,7 +49,7 @@ export function AuditLogsPage() {
       <div className="page-head">
         <div>
           <h1>审计日志</h1>
-          <div className="sub">管理端的信源配置、审核、DLQ 等操作都会记录在此，支持按操作类型筛选</div>
+          <div className="sub">管理端的信源配置、用户、DLQ 等操作都会记录在此，支持按操作类型筛选</div>
         </div>
         <div className="head-actions">
           <Space>
@@ -88,7 +88,7 @@ export function AuditLogsPage() {
               showTotal: (t) => `共 ${t} 条`,
             }}
             locale={{
-              emptyText: <EmptyState description="暂无审计记录。管理端的信源配置、审核、DLQ 等操作都会记录在此。" />,
+              emptyText: <EmptyState description="暂无审计记录。管理端的信源配置、用户、DLQ 等操作都会记录在此。" />,
             }}
             columns={[
               { title: 'ID', dataIndex: 'logId', width: 70 },
