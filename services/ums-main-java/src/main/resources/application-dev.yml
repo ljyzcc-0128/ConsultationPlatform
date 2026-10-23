@@ -1,0 +1,76 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${UMS_MYSQL_HOST:10.21.13.77}:${UMS_MYSQL_PORT:3306}/${UMS_MYSQL_DB:cp_news}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${UMS_MYSQL_USER:ums_app}
+    password: ${UMS_MYSQL_PASSWORD:98128ly#}
+
+  rabbitmq:
+    host: ${UMS_MQ_HOST:127.0.0.1}
+    port: ${UMS_MQ_PORT:5672}
+    username: ${UMS_MQ_USER:ums_admin}
+    password: ${UMS_MQ_PASSWORD:1eAODIRLqpRazsxV}
+    virtual-host: /
+
+ums:
+  ai:
+    enabled: ${UMS_AI_ENABLED:true}
+    api-key: ${UMS_AI_API_KEY:}          # 本地可留空，功能自动降级
+
+  security:
+    jwt:
+      secret: ${UMS_JWT_SECRET:dev-only-secret-change-me-in-production-32bytes}
+    default-provider: LOCAL
+    iam:
+      enabled: false
+      auth-api-url: ""
+      api-key: ""
+      bearer-token: ""
+    # ---------- 晶彩单点登录（IAM OAuth 2.0 授权码模式） ----------
+    # 测试环境对接配置：拿到 IAM 凭证后填入下列五项并置 enabled: true 即可生效。
+    # 填写要求：
+    #   1. client-id / client-secret —— IAM 负责人分配的应用编码与密钥
+    #   2. token-url / userinfo-url —— IAM 提供的换 token / 用户信息端点
+    #   3. callback-url —— 必须与 IAM 后台登记的回调地址一字不差（测试环境示例：
+    #      http://10.21.13.77/api/auth/sso/callback；本机联调用 http://localhost:8080/...）
+    #   4. token-auth-mode —— 按 IAM 的 OAuth2.0 对接文档选 FORM（凭证放表单，默认）
+    #      或 BASIC（凭证放 Authorization: Basic 请求头）
+    #   5. frontend-landing-url —— 部署在哪台服务器就改成哪台的落地页
+    #      （测试环境：http://10.21.13.77/sso/landing；本机调试用 localhost:5173）
+    sso:
+      enabled: false
+      token-url: ""
+      userinfo-url: ""
+      client-id: ""
+      client-secret: ""
+      callback-url: ""
+      token-auth-mode: FORM
+      frontend-landing-url: http://localhost:5173/sso/landing
+
+  admin:
+    token: ""
+
+  crawler:
+    base-url: ${UMS_CRAWLER_URL:http://localhost:8100}
+
+  mgmt:
+    base-url: ${UMS_MGMT_URL:http://127.0.0.1:15672}
+    user: ${UMS_MGMT_USER:ums_admin}
+    password: ${UMS_MGMT_PASSWORD:1eAODIRLqpRazsxV}
+
+  jingcai:
+    enabled: false
+    app-key: ""
+    app-secret: ""
+    agent-id: ""
+    receivers: ""
+    card-link: ""
+
+  xxl-job:
+    enabled: false
+    admin-addresses: http://127.0.0.1:8081/xxl-job-admin
+    access-token: default_token
+
+logging:
+  level:
+    com.example.ums: DEBUG
+    org.springframework.web: INFO

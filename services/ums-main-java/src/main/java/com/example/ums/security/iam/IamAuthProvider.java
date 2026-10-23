@@ -1,10 +1,8 @@
 package com.example.ums.security.iam;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.ums.security.AuthenticationProvider;
 import com.example.ums.security.AuthenticationRequest;
 import com.example.ums.security.UserPrincipal;
-import com.example.ums.user.mapper.UserMapper;
 import com.example.ums.user.model.CpUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,21 +19,24 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * IAM 认证提供方（SPI 实现，providerId = "IAM"）。
  *
- * <p>认证流程（API 调用模式，非 OAuth2 浏览器跳转）：
+ * <p>
+ * 认证流程（API 调用模式，非 OAuth2 浏览器跳转）：
  * <ol>
- *   <li>用户在前端输入用户名 + 密码</li>
- *   <li>AuthController 调用 AuthenticationService.login(provider="IAM", username, credential=密码)</li>
- *   <li>本类 authenticate() 将凭据 POST 到 IAM 认证 API</li>
- *   <li>IAM 验证成功返回用户信息 → 查/建 cp_user → 返回 UserPrincipal</li>
- *   <li>AuthenticationServiceImpl 用 UserPrincipal 签发 JWT</li>
+ * <li>用户在前端输入用户名 + 密码</li>
+ * <li>AuthController 调用 AuthenticationService.login(provider="IAM", username,
+ * credential=密码)</li>
+ * <li>本类 authenticate() 将凭据 POST 到 IAM 认证 API</li>
+ * <li>IAM 验证成功返回用户信息 → 查/建 cp_user → 返回 UserPrincipal</li>
+ * <li>AuthenticationServiceImpl 用 UserPrincipal 签发 JWT</li>
  * </ol>
  *
- * <p>IAM API 约定：
+ * <p>
+ * IAM API 约定：
+ * 
  * <pre>
  * POST {auth-api-url}
  * Headers:
@@ -53,12 +54,13 @@ import java.util.UUID;
  *   {"error": "用户名或密码错误"}
  * </pre>
  *
- * <p>IAM 接入时需补全的 TODO 点：
+ * <p>
+ * IAM 接入时需补全的 TODO 点：
  * <ul>
- *   <li>TODO: IAM 返回的字段映射（不同 IAM 返回 JSON 结构不同，需调整 extractField 的字段名）</li>
- *   <li>TODO: 密码加密传输（如 IAM 要求 SM2/RSA 加密，需在 POST 前加密 password）</li>
- *   <li>TODO: 用户角色映射（IAM 返回的角色码可能与本系统不一致，需做映射表）</li>
- *   <li>TODO: 连接池/超时调优（生产环境建议配置 HttpClient 连接池参数）</li>
+ * <li>TODO: IAM 返回的字段映射（不同 IAM 返回 JSON 结构不同，需调整 extractField 的字段名）</li>
+ * <li>TODO: 密码加密传输（如 IAM 要求 SM2/RSA 加密，需在 POST 前加密 password）</li>
+ * <li>TODO: 用户角色映射（IAM 返回的角色码可能与本系统不一致，需做映射表）</li>
+ * <li>TODO: 连接池/超时调优（生产环境建议配置 HttpClient 连接池参数）</li>
  * </ul>
  */
 @Component
@@ -68,7 +70,7 @@ public class IamAuthProvider implements AuthenticationProvider {
     private static final Logger log = LoggerFactory.getLogger(IamAuthProvider.class);
 
     private final IamProperties iamProperties;
-    private final UserMapper userMapper;
+    private final IamUserStore userStore;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -76,9 +78,9 @@ public class IamAuthProvider implements AuthenticationProvider {
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    public IamAuthProvider(IamProperties iamProperties, UserMapper userMapper) {
+    public IamAuthProvider(IamProperties iamProperties, IamUserStore userStore) {
         this.iamProperties = iamProperties;
-        this.userMapper = userMapper;
+        this.userStore = userStore;
     }
 
     @Override
@@ -113,9 +115,10 @@ public class IamAuthProvider implements AuthenticationProvider {
             externalId = iamUsername != null ? iamUsername : username;
         }
 
-        // 3. 查找或自动创建 cp_user
-        CpUser user = findOrCreateUser(externalId, iamUsername != null ? iamUsername : username,
-                displayName, email, roles);
+        // 3. 查找或自动创建 cp_user（共用 IamUserStore，与晶彩单点登录同一套账户逻辑）
+        CpUser user = userStore.findOrCreate(externalId, iamUsername != null ? iamUsername : username,
+                displayName, email, roles,
+                iamProperties.isAutoProvision(), iamProperties.getDefaultRoles());
 
         // 4. 检查用户状态（IAM 返回 DISABLED 或本地标记 DISABLED）
         String effectiveStatus = status != null ? status : user.getStatus();
@@ -127,10 +130,9 @@ public class IamAuthProvider implements AuthenticationProvider {
                 user.getUserId(),
                 user.getUsername(),
                 user.getDisplayName(),
-                parseRoles(user.getRoles()),
+                userStore.parseRoles(user.getRoles()),
                 user.getProvider(),
-                user.getExternalId()
-        );
+                user.getExternalId());
     }
 
     /**
@@ -156,7 +158,8 @@ public class IamAuthProvider implements AuthenticationProvider {
         switch (iamProperties.getAuthMode()) {
             case API_KEY -> reqBuilder.header("X-API-Key", iamProperties.getApiKey());
             case BEARER -> reqBuilder.header("Authorization", "Bearer " + iamProperties.getBearerToken());
-            case NONE -> {}
+            case NONE -> {
+            }
         }
 
         try {
@@ -184,7 +187,8 @@ public class IamAuthProvider implements AuthenticationProvider {
     /**
      * 从 JSON 中按优先级提取字段值。
      *
-     * <p>TODO: 不同 IAM 返回的字段名不同，接入时需根据实际情况调整。
+     * <p>
+     * TODO: 不同 IAM 返回的字段名不同，接入时需根据实际情况调整。
      */
     private String extractField(JsonNode json, String... fieldNames) {
         for (String field : fieldNames) {
@@ -210,81 +214,5 @@ public class IamAuthProvider implements AuthenticationProvider {
             }
         }
         return iamProperties.getDefaultRoles();
-    }
-
-    /**
-     * 按 external_id + provider=IAM 查找 cp_user。
-     * 若 auto-provision=true 且用户不存在，自动创建。
-     */
-    private CpUser findOrCreateUser(String externalId, String username,
-                                     String displayName, String email, List<String> roles) {
-        LambdaQueryWrapper<CpUser> qw = new LambdaQueryWrapper<>();
-        qw.eq(CpUser::getExternalId, externalId)
-          .eq(CpUser::getProvider, "IAM");
-        CpUser user = userMapper.selectOne(qw);
-
-        if (user != null) {
-            // 更新用户信息（displayName/email/roles 可能变更）
-            boolean changed = false;
-            if (displayName != null && !displayName.equals(user.getDisplayName())) {
-                user.setDisplayName(displayName);
-                changed = true;
-            }
-            if (email != null && !email.equals(user.getEmail())) {
-                user.setEmail(email);
-                changed = true;
-            }
-            String rolesJson = serializeRoles(roles);
-            if (rolesJson != null && !rolesJson.equals(user.getRoles())) {
-                user.setRoles(rolesJson);
-                changed = true;
-            }
-            if (changed) {
-                userMapper.updateById(user);
-                log.info("IAM user info updated: externalId={}", externalId);
-            }
-            return user;
-        }
-
-        if (!iamProperties.isAutoProvision()) {
-            throw new BadCredentialsException("IAM 用户未注册，请联系管理员开通账号");
-        }
-
-        // 自动创建 cp_user
-        user = new CpUser();
-        user.setUserId(UUID.randomUUID().toString());
-        user.setUsername(username);
-        user.setDisplayName(displayName);
-        user.setEmail(email);
-        user.setRoles(serializeRoles(roles));
-        user.setStatus("ACTIVE");
-        user.setProvider("IAM");
-        user.setExternalId(externalId);
-        userMapper.insert(user);
-        log.info("IAM auto-provisioned user: externalId={} username={}", externalId, username);
-        return user;
-    }
-
-    private String serializeRoles(List<String> roles) {
-        if (roles == null || roles.isEmpty()) {
-            roles = iamProperties.getDefaultRoles();
-        }
-        try {
-            return objectMapper.writeValueAsString(roles);
-        } catch (Exception e) {
-            return "[\"USER\"]";
-        }
-    }
-
-    private List<String> parseRoles(String rolesJson) {
-        if (rolesJson == null || rolesJson.isBlank()) {
-            return List.of("USER");
-        }
-        try {
-            return objectMapper.readValue(rolesJson,
-                    new com.fasterxml.jackson.core.type.TypeReference<>() {});
-        } catch (Exception e) {
-            return List.of("USER");
-        }
     }
 }

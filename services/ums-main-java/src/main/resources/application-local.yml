@@ -1,0 +1,64 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${UMS_MYSQL_HOST:127.0.0.1}:${UMS_MYSQL_PORT:3306}/${UMS_MYSQL_DB:cp_news}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${UMS_MYSQL_USER:root}
+    password: ${UMS_MYSQL_PASSWORD:root1234}
+
+  rabbitmq:
+    host: ${UMS_MQ_HOST:127.0.0.1}
+    port: ${UMS_MQ_PORT:5672}
+    username: ${UMS_MQ_USER:ums_admin}
+    password: ${UMS_MQ_PASSWORD:1eAODIRLqpRazsxV}
+    virtual-host: /
+
+ums:
+  ai:
+    enabled: ${UMS_AI_ENABLED:true}
+    api-key: ${UMS_AI_API_KEY:}          # 本地可留空，功能自动降级
+
+  security:
+    jwt:
+      secret: ${UMS_JWT_SECRET:dev-only-secret-change-me-in-production-32bytes}
+    default-provider: LOCAL
+    iam:
+      enabled: false
+      auth-api-url: ""
+      api-key: ""
+      bearer-token: ""
+    sso:
+      enabled: false
+      token-url: ""
+      userinfo-url: ""
+      client-id: ""
+      client-secret: ""
+      callback-url: ""
+      frontend-landing-url: http://localhost:5173/sso/landing
+
+  admin:
+    token: ""
+
+  crawler:
+    base-url: ${UMS_CRAWLER_URL:http://localhost:8100}
+
+  mgmt:
+    base-url: ${UMS_MGMT_URL:http://127.0.0.1:15672}
+    user: ${UMS_MGMT_USER:ums_admin}
+    password: ${UMS_MGMT_PASSWORD:1eAODIRLqpRazsxV}
+
+  jingcai:
+    enabled: false
+    app-key: ""
+    app-secret: ""
+    agent-id: ""
+    receivers: ""
+    card-link: ""
+
+  xxl-job:
+    enabled: false
+    admin-addresses: http://127.0.0.1:8081/xxl-job-admin
+    access-token: default_token
+
+logging:
+  level:
+    com.example.ums: DEBUG
+    org.springframework.web: INFO

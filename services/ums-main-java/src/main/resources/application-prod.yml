@@ -1,0 +1,68 @@
+spring:
+  datasource:
+    # 生产必须显式指定环境变量，缺失则启动报错（比 ${X:默认值} 更安全）
+    url: jdbc:mysql://${UMS_MYSQL_HOST}:${UMS_MYSQL_PORT:3306}/${UMS_MYSQL_DB}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=true&allowPublicKeyRetrieval=true
+    username: ${UMS_MYSQL_USER}
+    password: ${UMS_MYSQL_PASSWORD}
+
+  rabbitmq:
+    host: ${UMS_MQ_HOST}
+    port: ${UMS_MQ_PORT:5672}
+    username: ${UMS_MQ_USER}
+    password: ${UMS_MQ_PASSWORD}
+    virtual-host: /
+
+ums:
+  ai:
+    enabled: ${UMS_AI_ENABLED:true}
+    api-key: ${UMS_AI_API_KEY}
+
+  security:
+    jwt:
+      secret: ${UMS_JWT_SECRET}              # 32 字节以上，缺失则启动失败
+    default-provider: ${UMS_AUTH_PROVIDER:LOCAL}
+    iam:
+      enabled: ${UMS_IAM_ENABLED:false}
+      auth-api-url: ${UMS_IAM_AUTH_API_URL:}
+      auth-mode: ${UMS_IAM_AUTH_MODE:API_KEY}
+      api-key: ${UMS_IAM_API_KEY:}
+      bearer-token: ${UMS_IAM_BEARER_TOKEN:}
+    sso:
+      enabled: ${UMS_SSO_ENABLED:false}
+      token-url: ${UMS_SSO_TOKEN_URL:}
+      userinfo-url: ${UMS_SSO_USERINFO_URL:}
+      client-id: ${UMS_SSO_CLIENT_ID:}
+      client-secret: ${UMS_SSO_CLIENT_SECRET:}
+      callback-url: ${UMS_SSO_CALLBACK_URL:}
+      # 换 token 凭证传递方式：FORM（表单，默认）/ BASIC（Authorization 头），按 IAM 文档选择
+      token-auth-mode: ${UMS_SSO_TOKEN_AUTH_MODE:FORM}
+      frontend-landing-url: ${UMS_SSO_LANDING_URL:}
+
+  admin:
+    token: ""                                # 已下线，保留空
+
+  crawler:
+    base-url: ${UMS_CRAWLER_URL}
+
+  mgmt:
+    base-url: ${UMS_MGMT_URL}
+    user: ${UMS_MGMT_USER}
+    password: ${UMS_MGMT_PASSWORD}
+
+  jingcai:
+    enabled: ${UMS_JINGCAI_ENABLED:false}
+    app-key: ${UMS_JINGCAI_APP_KEY:}
+    app-secret: ${UMS_JINGCAI_APP_SECRET:}
+    agent-id: ${UMS_JINGCAI_AGENT_ID:}
+    receivers: ${UMS_JINGCAI_RECEIVERS:}
+    card-link: ${UMS_JINGCAI_CARD_LINK:}
+
+  xxl-job:
+    enabled: ${UMS_XXL_JOB_ENABLED:false}
+    admin-addresses: ${UMS_XXL_ADMIN}
+    access-token: ${UMS_XXL_TOKEN}
+
+logging:
+  level:
+    com.example.ums: INFO
+    root: WARN

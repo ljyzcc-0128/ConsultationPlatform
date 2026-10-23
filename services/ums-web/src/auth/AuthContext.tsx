@@ -32,10 +32,21 @@ interface LoginResponse {
   };
 }
 
+interface MeResponse {
+  userId: string;
+  username: string;
+  displayName: string;
+  roles: Role[];
+  provider: string;
+  externalId: string | null;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (username: string, provider?: string, credential?: string) => Promise<void>;
+  /** 晶彩 SSO 回调落地：凭后端签发的 token 激活本地登录态 */
+  ssoLogin: (token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -81,6 +92,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const ssoLogin = useCallback(async (token: string) => {
+    setLoading(true);
+    try {
+      // 先存 token（axios 拦截器带上），再拉当前用户信息激活登录态
+      localStorage.setItem(TOKEN_KEY, token);
+      const me = (await api.get<never, MeResponse>('/auth/me')) as MeResponse;
+      const authUser: AuthUser = {
+        id: me.userId,
+        username: me.username,
+        displayName: me.displayName,
+        email: null,
+        roles: me.roles,
+        provider: me.provider,
+      };
+      localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+      setUser(authUser);
+    } catch (e) {
+      // /auth/me 校验失败：token 无效，回滚并向上抛出
+      localStorage.removeItem(TOKEN_KEY);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -95,8 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, login, logout }),
-    [user, loading, login, logout],
+    () => ({ user, loading, login, ssoLogin, logout }),
+    [user, loading, login, ssoLogin, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

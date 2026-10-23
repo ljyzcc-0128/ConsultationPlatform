@@ -53,24 +53,28 @@ export function AppLayout() {
             options={[{ value: 'zh-CN', label: '简体中文' }]}
             aria-label="界面语言"
           />
-          <span
-            className="logout"
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
+          {/* 单点登录会话不提供退出入口（文档 5.3：晶彩容器内退出会导致会话异常/死循环），
+              仅本地 LOCAL 开发模式保留 */}
+          {user?.provider === 'LOCAL' && (
+            <span
+              className="logout"
+              role="button"
+              tabIndex={0}
+              onClick={() => {
                 logout();
                 navigate('/login');
-              }
-            }}
-          >
-            ⏻ 退出
-          </span>
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  logout();
+                  navigate('/login');
+                }
+              }}
+            >
+              ⏻ 退出
+            </span>
+          )}
         </div>
       </nav>
 

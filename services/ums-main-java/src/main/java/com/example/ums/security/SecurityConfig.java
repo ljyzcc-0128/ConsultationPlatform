@@ -35,6 +35,9 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/sso/**").permitAll()
+                // Mock IAM（仅 sso-mock profile 存在，生产环境无此端点）
+                .requestMatchers("/api/mock-iam/**").permitAll()
                 .requestMatchers("/api/news/**", "/actuator/**").permitAll()
                 .requestMatchers("/api/v1/search").permitAll()
                 .requestMatchers("/api/v1/contents/**").permitAll()

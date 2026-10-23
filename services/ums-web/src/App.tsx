@@ -8,6 +8,7 @@ import { CenterPage } from './pages/center/CenterPage';
 import { ContentDetailPage } from './pages/center/ContentDetailPage';
 import { SupplyChainPage } from './pages/supplychain/SupplyChainPage';
 import { LoginPage } from './pages/auth/LoginPage';
+import { SsoLandingPage } from './pages/auth/SsoLandingPage';
 import { EmptyState } from './components/EmptyState';
 import { AdminRoute } from './components/AdminRoute';
 import { useAuth } from './auth/AuthContext';
@@ -48,6 +49,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/sso/landing" element={<SsoLandingPage />} />
       <Route
         element={
           <RequireAuth>
