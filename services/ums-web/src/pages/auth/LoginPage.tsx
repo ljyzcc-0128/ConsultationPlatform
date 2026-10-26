@@ -7,15 +7,18 @@ import { useTheme } from '../../theme/ThemeProvider';
 /**
  * 登录页
  *
- * LOCAL 模式（开发）：仅输入用户名即可登录。
- * IAM 模式：输入用户名 + 密码，凭据发送后端 IamAuthProvider 验证。
+ * 页面底部可在两种认证方式间随时切换（运行时状态，无需重新构建）：
+ * - LOCAL 模式（开发）：仅输入用户名即可登录。
+ * - IAM 模式：输入用户名 + 密码，凭据发送后端 IamAuthProvider 验证。
  *
- * 切换方式：前端环境变量 VITE_AUTH_PROVIDER=IAM（默认 LOCAL）
+ * 构建期默认值由环境变量 VITE_AUTH_PROVIDER=IAM 控制（默认 LOCAL）。
  *
  * 工业风双主题（暖白亮色 / 深绿暗色）由全局 theme.css 控制。
  */
-const AUTH_PROVIDER = import.meta.env.VITE_AUTH_PROVIDER ?? 'LOCAL';
-const IS_IAM = AUTH_PROVIDER === 'IAM';
+const DEFAULT_PROVIDER =
+  (import.meta.env.VITE_AUTH_PROVIDER ?? 'LOCAL') === 'IAM' ? 'IAM' : 'LOCAL';
+
+type AuthMode = 'LOCAL' | 'IAM';
 
 type LoginForm = { username: string; password?: string };
 
@@ -55,17 +58,26 @@ export function LoginPage() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [submitting, setSubmitting] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>(DEFAULT_PROVIDER);
+  const isIam = authMode === 'IAM';
   const [form] = Form.useForm<LoginForm>();
+
+  /* 切换认证方式：清掉密码值与校验状态，避免残留报错 */
+  const switchMode = (mode: AuthMode) => {
+    if (mode === authMode) return;
+    setAuthMode(mode);
+    form.resetFields(['password']);
+  };
 
   const onFinish = async (values: LoginForm) => {
     setSubmitting(true);
     try {
-      const credential = IS_IAM ? values.password ?? '' : '';
-      await login(values.username.trim(), AUTH_PROVIDER, credential);
+      const credential = isIam ? values.password ?? '' : '';
+      await login(values.username.trim(), authMode, credential);
       const from = (location.state as { from?: string } | null)?.from ?? '/feed';
       navigate(from, { replace: true });
     } catch {
-      message.error(IS_IAM ? '用户名或密码错误' : '登录失败，请检查用户名');
+      message.error(isIam ? '用户名或密码错误' : '登录失败，请检查用户名');
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +100,7 @@ export function LoginPage() {
         <Form<LoginForm>
           form={form}
           onFinish={onFinish}
-          initialValues={{ username: IS_IAM ? '' : 'admin' }}
+          initialValues={{ username: DEFAULT_PROVIDER === 'IAM' ? '' : 'admin' }}
           layout="vertical"
         >
           <div className="brand">
@@ -118,7 +130,7 @@ export function LoginPage() {
             <FieldError name="username" form={form} />
           </div>
 
-          {IS_IAM && (
+          {isIam && (
             <div className="field">
               <label htmlFor="login-password">
                 <span className="req">*</span>密码
@@ -151,13 +163,27 @@ export function LoginPage() {
           </button>
 
           <div className="footnote">
-            {IS_IAM ? (
+            {isIam ? (
               <>
-                通过公司 <span>IAM 系统认证</span>
+                通过公司 IAM 系统认证 ·{' '}
+                <button
+                  type="button"
+                  className="footnote-link"
+                  onClick={() => switchMode('LOCAL')}
+                >
+                  本地账号登录
+                </button>
               </>
             ) : (
               <>
-                开发模式（LOCAL 认证）· <span>IAM 预留接口已就绪</span>
+                开发模式（LOCAL 认证，免密） ·{' '}
+                <button
+                  type="button"
+                  className="footnote-link"
+                  onClick={() => switchMode('IAM')}
+                >
+                  IAM 账号登录
+                </button>
               </>
             )}
           </div>

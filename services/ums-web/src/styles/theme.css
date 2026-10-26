@@ -912,6 +912,20 @@ body.theme-cool {
   color: var(--brand-text);
 }
 
+/* 登录页认证方式切换入口（LOCAL / IAM 运行时切换） */
+.footnote .footnote-link {
+  padding: 0;
+  font: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--brand-text);
+}
+
+.footnote .footnote-link:hover {
+  text-decoration: underline;
+}
+
 /* ---------- 管理后台侧栏 ---------- */
 .admin-shell {
   display: flex;
