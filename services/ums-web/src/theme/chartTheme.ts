@@ -43,6 +43,7 @@ export const MAX_MODULE_BLOCK = 8;
 
 const seriesCache = new Map<Theme, ChartPalette>();
 const moduleCache = new Map<Theme, string[]>();
+const trendCache = new Map<Theme, { up: string; down: string }>();
 let themeObserverStarted = false;
 
 function readToken(name: string, fallback: string): string {
@@ -73,6 +74,7 @@ function startThemeObserver() {
 export function resetChartPaletteCache() {
   seriesCache.clear();
   moduleCache.clear();
+  trendCache.clear();
 }
 
 /** 全局图表色板：系列色 / 坐标轴文字 / 分隔线，全部来自 CSS 变量 */
@@ -114,4 +116,23 @@ export function moduleChartPalette(theme: Theme, block: number): ChartPalette {
     line: base.line,
     surface: base.surface,
   };
+}
+
+const TREND_FALLBACK: Record<Theme, { up: string; down: string }> = {
+  minimal: { up: '#cf1322', down: '#3f8600' },
+  cool: { up: '#e05d5d', down: '#7fbf7f' },
+};
+
+/** 涨跌语义色（红涨绿跌）：指标走势线与环比角标共用，与 theme.css 的 --trend-* 令牌同步 */
+export function getTrendColors(theme: Theme): { up: string; down: string } {
+  startThemeObserver();
+  const cached = trendCache.get(theme);
+  if (cached) return cached;
+  const fb = TREND_FALLBACK[theme];
+  const colors = {
+    up: readToken('--trend-up', fb.up),
+    down: readToken('--trend-down', fb.down),
+  };
+  trendCache.set(theme, colors);
+  return colors;
 }

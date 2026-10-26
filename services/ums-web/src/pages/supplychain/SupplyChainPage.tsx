@@ -23,7 +23,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { EmptyState } from '../../components/EmptyState';
 import { ListSkeleton } from '../../components/ListSkeleton';
 import { useTheme } from '../../theme/ThemeProvider';
-import { moduleChartPalette, type ChartPalette } from '../../theme/chartTheme';
+import { moduleChartPalette, getTrendColors, type ChartPalette } from '../../theme/chartTheme';
 import type { IndicatorSeries, InventoryBlock, TradeRecord } from '../../api/types';
 
 /* =========================================================
@@ -44,35 +44,64 @@ const MODULES: ScModule[] = [
   { id: 'trade', no: '03', title: '贸易与物流', block: 3 },
 ];
 
-function lineOption(
+/**
+ * SC-001 指标迷你走势：弱化坐标轴（隐藏 Y 轴、仅显示首尾日期），
+ * 线与渐变面积按涨跌语义着色，末端白描边圆点突出最新值。
+ */
+function sparklineOption(
   points: Array<{ date: string; value: number }>,
   unit: string,
+  trendColor: string,
   chart: ChartPalette,
 ) {
+  const lastIndex = points.length - 1;
   return {
-    color: chart.colors,
-    grid: { left: 48, right: 16, top: 24, bottom: 28 },
+    grid: { left: 10, right: 10, top: 14, bottom: 24 },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'line', lineStyle: { color: trendColor, opacity: 0.4 } },
+      valueFormatter: (value: unknown) => `${value} ${unit}`,
+    },
     xAxis: {
       type: 'category',
       data: points.map((p) => p.date.slice(5)),
-      axisLabel: { fontSize: 11, color: chart.label },
+      axisTick: { show: false },
+      axisLine: { show: false },
+      axisLabel: {
+        fontSize: 11,
+        color: chart.label,
+        interval: (index: number) => index === 0 || index === lastIndex,
+      },
     },
-    yAxis: {
-      type: 'value',
-      name: unit,
-      scale: true,
-      axisLabel: { color: chart.label },
-      splitLine: { lineStyle: { color: chart.line } },
-    },
-    tooltip: { trigger: 'axis' },
+    yAxis: { type: 'value', scale: true, show: false },
     series: [
       {
         type: 'line',
         data: points.map((p) => p.value),
-        smooth: true,
+        smooth: 0.4,
         showSymbol: false,
-        lineStyle: { width: 2 },
-        areaStyle: { opacity: 0.08 },
+        lineStyle: { width: 2, color: trendColor },
+        areaStyle: {
+          opacity: 0.12,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: trendColor },
+              { offset: 1, color: 'transparent' },
+            ],
+          },
+        },
+        markPoint: {
+          symbol: 'circle',
+          symbolSize: 7,
+          itemStyle: { color: trendColor, borderColor: chart.surface, borderWidth: 2 },
+          label: { show: false },
+          data: lastIndex >= 0 ? [{ coord: [lastIndex, points[lastIndex].value] }] : [],
+        },
       },
     ],
   };
@@ -126,32 +155,35 @@ function comboOption(block: InventoryBlock, chart: ChartPalette) {
   };
 }
 
-/** SC-001：原材料市场指标卡片（当前值+环比箭头，走势图直接展示） */
+/** SC-001：原材料市场指标卡片（指标名+来源标注 / 大数值+环比角标 / 涨跌着色迷你走势） */
 function IndicatorCard({
   indicator,
   chart,
+  trendColor,
 }: {
   indicator: IndicatorSeries;
   chart: ChartPalette;
+  trendColor: string;
 }) {
   const up = indicator.momChange >= 0;
   return (
     <div className="indicator-card">
-      <div style={{ marginBottom: 8 }}>
+      <div className="ind-top">
+        <span className="ind-name">{indicator.name}</span>
         <DataSourceBadge scope={indicator.dataScope} sourceName={indicator.sourceName} />
       </div>
-      <div className="ind-name">{indicator.name}</div>
-      <Space size={8} align="baseline">
+      <div className="ind-value-row">
         <span className="ind-value">{indicator.latestValue}</span>
         <span className="ind-unit">{indicator.unit}</span>
-        <Typography.Text className={up ? 'ind-trend up' : 'ind-trend down'}>
+        <span className={up ? 'ind-chip up' : 'ind-chip down'}>
           {up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(indicator.momChange)}%
-        </Typography.Text>
-      </Space>
-      <div style={{ marginTop: 10 }}>
+          <em>环比</em>
+        </span>
+      </div>
+      <div className="ind-chart">
         <LazyChart
-          option={lineOption(indicator.points, indicator.unit, chart)}
-          height={220}
+          option={sparklineOption(indicator.points, indicator.unit, trendColor, chart)}
+          height={150}
           fallback={
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               <DotChartOutlined /> 图表加载中…
@@ -260,19 +292,25 @@ export function SupplyChainPage() {
   const renderBody = (m: ScModule) => {
     const chart = moduleChartPalette(theme, m.block);
     switch (m.id) {
-      case 'materials':
+      case 'materials': {
         if (materials.isLoading) return <ListSkeleton rows={2} />;
         if (materials.isError)
           return <ErrorState error={materials.error} onRetry={() => materials.refetch()} />;
+        const trend = getTrendColors(theme);
         return (
-          <Row gutter={[12, 12]}>
+          <Row gutter={[14, 14]}>
             {materials.data?.indicators.map((ind) => (
               <Col xs={24} sm={12} lg={8} key={ind.code}>
-                <IndicatorCard indicator={ind} chart={chart} />
+                <IndicatorCard
+                  indicator={ind}
+                  chart={chart}
+                  trendColor={ind.momChange >= 0 ? trend.up : trend.down}
+                />
               </Col>
             ))}
           </Row>
         );
+      }
       case 'inventory':
         if (inventory.isLoading) return <ListSkeleton rows={2} />;
         if (inventory.isError)
