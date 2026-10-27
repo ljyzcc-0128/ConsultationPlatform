@@ -47,13 +47,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * 配套环境变量（本地调试）：
  * 
  * <pre>
- * UMS_SSO_ENABLED=true
- * UMS_SSO_TOKEN_URL=http://localhost:8080/api/mock-iam/token
- * UMS_SSO_USERINFO_URL=http://localhost:8080/api/mock-iam/userinfo
- * UMS_SSO_CLIENT_ID=mock-client
- * UMS_SSO_CLIENT_SECRET=mock-secret
- * UMS_SSO_CALLBACK_URL=http://localhost:8080/api/auth/sso/callback
- * UMS_SSO_LANDING_URL=http://localhost:5173/sso/landing
+ * UMS_SECURITY_SSO_ENABLED=true
+ * UMS_SECURITY_SSO_TOKENURL=http://localhost:8080/api/mock-iam/token
+ * UMS_SECURITY_SSO_USERINFOURL=http://localhost:8080/api/mock-iam/userinfo
+ * UMS_SECURITY_SSO_CLIENTID=mock-client
+ * UMS_SECURITY_SSO_CLIENTSECRET=mock-secret
+ * UMS_SECURITY_SSO_CALLBACKURL=http://localhost:8080/api/auth/sso/callback
+ * UMS_SECURITY_SSO_FRONTENDLANDINGURL=http://localhost:5173/sso/landing
  * </pre>
  */
 @RestController

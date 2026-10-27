@@ -2,7 +2,6 @@ package com.example.ums.push.jingcai;
 
 import com.example.ums.supplychain.dto.IndicatorSeriesDto;
 import com.example.ums.supplychain.dto.InventoryBlockDto;
-import com.example.ums.supplychain.dto.TradeRecordDto;
 import com.example.ums.supplychain.service.SupplyChainService;
 import org.springframework.stereotype.Service;
 
@@ -11,8 +10,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * 供应链看板日报卡片内容构建。
@@ -68,19 +65,6 @@ public class SupplyChainDigestService {
                 }
             }
             md.append('\n');
-        }
-
-        // ---------- 贸易与物流（按状态统计） ----------
-        List<TradeRecordDto> records = supplyChainService.listTradeLogistics(null, null);
-        if (!records.isEmpty()) {
-            Map<String, Integer> byStatus = new TreeMap<>();
-            for (TradeRecordDto r : records) {
-                byStatus.merge(r.status(), 1, Integer::sum);
-            }
-            md.append("### 贸易与物流\n\n");
-            for (Map.Entry<String, Integer> e : byStatus.entrySet()) {
-                md.append("- ").append(e.getKey()).append("：").append(e.getValue()).append(" 单\n");
-            }
         }
 
         String date = LocalDate.now().format(DATE_FMT);

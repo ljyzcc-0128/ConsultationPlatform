@@ -4,6 +4,7 @@ import com.example.ums.security.JwtTokenProvider;
 import com.example.ums.security.UserPrincipal;
 import com.example.ums.security.iam.sso.SsoProperties;
 import com.example.ums.security.iam.sso.SsoService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,11 +58,33 @@ public class SsoAuthController {
     public void callback(@RequestParam(required = false) String code,
             @RequestParam(name = "target_user_id", required = false) String targetUserId,
             @RequestParam(required = false) String target,
+            HttpServletRequest request,
             HttpServletResponse response) throws IOException {
+        // 记录 IAM 实际回传的完整参数串，用于核对回调格式（code / token / 其他）
+        log.info("SSO 回调进入: query={}", request.getQueryString());
+
         String landing = ssoProperties.getFrontendLandingUrl();
+        if (landing == null || landing.isBlank()) {
+            log.error("未配置 ums.security.sso.frontend-landing-url / UMS_SECURITY_SSO_FRONTENDLANDINGURL，无法回跳前端");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "SSO 未配置前端落地页（ums.security.sso.frontend-landing-url）");
+            return;
+        }
         String targetParam = (target != null && !target.isBlank())
                 ? "&target=" + URLEncoder.encode(target, StandardCharsets.UTF_8)
                 : "";
+
+        // 联调旁路（debug-bypass=true，仅测试环境）：跳过 IAM 全部校验，
+        // 只要落地页地址可读即直接以测试账号登录进入业务页面
+        if (ssoProperties.isDebugBypass()) {
+            UserPrincipal bypassPrincipal = ssoService.debugLogin();
+            String bypassToken = jwtTokenProvider.generate(bypassPrincipal);
+            log.warn("SSO 联调旁路生效: 跳过 IAM 校验，直接回跳落地页 {}", landing);
+            response.sendRedirect(landing + "?token="
+                    + URLEncoder.encode(bypassToken, StandardCharsets.UTF_8) + targetParam);
+            return;
+        }
+
         try {
             UserPrincipal principal = ssoService.ssoLogin(code, targetUserId);
             String token = jwtTokenProvider.generate(principal);

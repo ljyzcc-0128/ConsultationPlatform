@@ -72,17 +72,31 @@ public class SsoService {
         if (code == null || code.isBlank()) {
             throw new BadCredentialsException("缺少授权码（code）");
         }
-        requireConfigured(props.getTokenUrl(), "ums.security.sso.token-url / UMS_SSO_TOKEN_URL");
-        requireConfigured(props.getUserinfoUrl(), "ums.security.sso.userinfo-url / UMS_SSO_USERINFO_URL");
-        requireConfigured(props.getClientId(), "ums.security.sso.client-id / UMS_SSO_CLIENT_ID");
-        requireConfigured(props.getClientSecret(), "ums.security.sso.client-secret / UMS_SSO_CLIENT_SECRET");
-        requireConfigured(props.getCallbackUrl(), "ums.security.sso.callback-url / UMS_SSO_CALLBACK_URL");
+        requireConfigured(props.getTokenUrl(), "ums.security.sso.token-url / UMS_SECURITY_SSO_TOKENURL");
+        requireConfigured(props.getClientId(), "ums.security.sso.client-id / UMS_SECURITY_SSO_CLIENTID");
+        requireConfigured(props.getClientSecret(), "ums.security.sso.client-secret / UMS_SECURITY_SSO_CLIENTSECRET");
+        requireConfigured(props.getCallbackUrl(), "ums.security.sso.callback-url / UMS_SECURITY_SSO_CALLBACKURL");
 
-        // 1. 授权码换 access_token
-        String accessToken = exchangeForAccessToken(code);
+        // 1. 授权码换 access_token（响应可能直接携带用户身份）
+        JsonNode tokenResp = exchangeForAccessToken(code);
+        String accessToken = extractField(tokenResp, "access_token", "accessToken", "token");
+        if (accessToken == null || accessToken.isBlank()) {
+            log.error("token 端点未返回 access_token: {}", safeBrief(tokenResp));
+            throw new BadCredentialsException("IAM token 端点响应异常");
+        }
 
-        // 2. 获取用户信息
-        JsonNode info = fetchUserinfo(accessToken);
+        // 2. 用户身份：优先取 token 响应内携带的用户字段（部分 IAM 一次返回，无需再调 userinfo）；
+        //    取不到且配置了 userinfo-url 时才调 userinfo 兜底（不配则直接报错）
+        JsonNode info = tokenResp;
+        if (!hasAnyField(info, "id", "sub", "userId", "user_id", "username",
+                "employeeId", "externalId")) {
+            String userinfoUrl = props.getUserinfoUrl();
+            if (userinfoUrl == null || userinfoUrl.isBlank()) {
+                log.error("token 响应未携带用户身份且未配置 userinfo-url: {}", safeBrief(info));
+                throw new BadCredentialsException("IAM 未返回用户唯一标识，无法完成登录");
+            }
+            info = fetchUserinfo(accessToken);
+        }
 
         String externalId = extractField(info, "externalId", "user_id", "userId", "sub", "employeeId", "id");
         String username = extractField(info, "username", "user_name", "login", "account");
@@ -132,10 +146,28 @@ public class SsoService {
     }
 
     /**
+     * 联调旁路登录（仅 debug-bypass=true 时由回调调用）：
+     * 跳过 IAM 交互，直接以固定测试账号查/建 cp_user 并签发会话。
+     */
+    public UserPrincipal debugLogin() {
+        CpUser user = userStore.findOrCreate("DEBUG_TEST_USER", "debug_test", "联调测试用户",
+                null, List.of("USER", "ADMIN"), true, props.getDefaultRoles());
+        log.warn("SSO 联调旁路登录（未经过 IAM 校验）: username={}", user.getUsername());
+        return new UserPrincipal(
+                user.getUserId(),
+                user.getUsername(),
+                user.getDisplayName(),
+                userStore.parseRoles(user.getRoles()),
+                user.getProvider(),
+                user.getExternalId());
+    }
+
+    /**
      * 步骤 2：POST token_url 换 access_token（标准 OAuth2 授权码换 token）。
      * 凭证传递方式按 token-auth-mode 配置：FORM 放表单 / BASIC 放请求头。
+     * 返回原始 JSON 响应——部分 IAM 实现在该响应中直接携带用户身份。
      */
-    private String exchangeForAccessToken(String code) {
+    private JsonNode exchangeForAccessToken(String code) {
         StringBuilder form = new StringBuilder("grant_type=authorization_code")
                 .append("&code=").append(urlEncode(code))
                 .append("&redirect_uri=").append(urlEncode(orEmpty(props.getCallbackUrl())));
@@ -161,23 +193,22 @@ public class SsoService {
                 .POST(HttpRequest.BodyPublishers.ofString(form.toString(), StandardCharsets.UTF_8))
                 .build();
 
-        JsonNode body = executeForJson(request, "token 端点");
-        String accessToken = extractField(body, "access_token", "accessToken", "token");
-        if (accessToken == null || accessToken.isBlank()) {
-            log.error("token 端点未返回 access_token: {}", safeBrief(body));
-            throw new BadCredentialsException("IAM token 端点响应异常");
-        }
-        return accessToken;
+        return executeForJson(request, "token 端点");
     }
 
-    /** 步骤 3：GET userinfo_url（Bearer access_token） */
+    /**
+     * 步骤 3：请求 userinfo_url（Bearer access_token）。
+     * 使用 POST + 空 JSON body：OIDC 规范（§5.3）允许 GET/POST 两种方式；
+     * JIP 网关封装的「IAM4-OAuth2.0获取userInfo」接口为 POST 形式（见网关调用示例）。
+     */
     private JsonNode fetchUserinfo(String accessToken) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(props.getUserinfoUrl()))
                 .timeout(Duration.ofSeconds(props.getTimeoutSeconds()))
                 .header("Authorization", "Bearer " + accessToken)
+                .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
-                .GET()
+                .POST(HttpRequest.BodyPublishers.ofString("{}", StandardCharsets.UTF_8))
                 .build();
         return executeForJson(request, "userinfo 端点");
     }

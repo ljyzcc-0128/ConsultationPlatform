@@ -4,11 +4,7 @@ import {
   Col,
   Descriptions,
   Row,
-  Select,
-  Space,
-  Table,
   Tag,
-  Timeline,
   Typography,
 } from 'antd';
 import {
@@ -20,11 +16,10 @@ import { api } from '../../api/client';
 import { DataSourceBadge } from '../../components/DataSourceBadge';
 import { LazyChart } from '../../components/LazyChart';
 import { ErrorState } from '../../components/ErrorState';
-import { EmptyState } from '../../components/EmptyState';
 import { ListSkeleton } from '../../components/ListSkeleton';
 import { useTheme } from '../../theme/ThemeProvider';
 import { moduleChartPalette, getTrendColors, type ChartPalette } from '../../theme/chartTheme';
-import type { IndicatorSeries, InventoryBlock, TradeRecord } from '../../api/types';
+import type { IndicatorSeries, InventoryBlock } from '../../api/types';
 
 /* =========================================================
    模块元数据（章节卡与渲染分支同一数据源）
@@ -41,7 +36,6 @@ interface ScModule {
 const MODULES: ScModule[] = [
   { id: 'materials', no: '01', title: '原材料市场', block: 1 },
   { id: 'inventory', no: '02', title: '供需与库存', block: 2 },
-  { id: 'trade', no: '03', title: '贸易与物流', block: 3 },
 ];
 
 /**
@@ -195,17 +189,10 @@ function IndicatorCard({
   );
 }
 
-const TRADE_STATUS_COLOR: Record<TradeRecord['status'], string> = {
-  在途: 'processing',
-  已到港: 'cyan',
-  清关中: 'orange',
-  已完成: 'success',
-};
-
 export function SupplyChainPage() {
   const { theme } = useTheme();
 
-  /* ---------- 三个 react-query 数据源（与 modules.id 一一对应） ---------- */
+  /* ---------- 两个 react-query 数据源（与 modules.id 一一对应） ---------- */
   const materials = useQuery({
     queryKey: ['sc-materials'],
     queryFn: () =>
@@ -217,16 +204,6 @@ export function SupplyChainPage() {
     queryKey: ['sc-inventory'],
     queryFn: () => api.get<never, InventoryBlock>('/v1/supply-chain/inventory'),
     staleTime: 5 * 60_000,
-  });
-
-  const [tradeStatus, setTradeStatus] = useState<string>();
-  const trade = useQuery({
-    queryKey: ['sc-trade', tradeStatus],
-    queryFn: () =>
-      api.get<never, { records: TradeRecord[] }>('/v1/supply-chain/trade-logistics', {
-        params: tradeStatus ? { status: tradeStatus } : {},
-      }),
-    staleTime: 60_000,
   });
 
   /* ---------- 交互状态 ---------- */
@@ -318,68 +295,6 @@ export function SupplyChainPage() {
         return inventory.data ? (
           <LazyChart option={comboOption(inventory.data, chart)} height={320} />
         ) : null;
-      case 'trade':
-        return (
-          <>
-            <div className="module-tools">
-              <Select
-                allowClear
-                placeholder="状态筛选"
-                style={{ width: 140 }}
-                value={tradeStatus}
-                onChange={setTradeStatus}
-                options={['在途', '已到港', '清关中', '已完成'].map((s) => ({ value: s, label: s }))}
-              />
-            </div>
-            {trade.isLoading ? (
-              <ListSkeleton rows={3} />
-            ) : trade.isError ? (
-              <ErrorState error={trade.error} onRetry={() => trade.refetch()} />
-            ) : (
-              <div className="table-scroll">
-                <Table<TradeRecord>
-                  rowKey="id"
-                  dataSource={trade.data?.records ?? []}
-                  pagination={false}
-                  expandable={{
-                    expandedRowRender: (record) => (
-                      <Timeline
-                        items={record.timeline.map((t) => ({
-                          children: (
-                            <Space direction="vertical" size={0}>
-                              <Typography.Text>{t.event}</Typography.Text>
-                              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                                {t.time}
-                              </Typography.Text>
-                            </Space>
-                          ),
-                        }))}
-                      />
-                    ),
-                  }}
-                  locale={{
-                    emptyText: <EmptyState description="当前筛选条件下没有提单记录。" />,
-                  }}
-                  columns={[
-                    { title: '提单号', dataIndex: 'id', width: 160 },
-                    { title: '货物', dataIndex: 'goods' },
-                    { title: '交易对手', dataIndex: 'counterparty', width: 160 },
-                    { title: '航线', dataIndex: 'route', width: 200 },
-                    { title: '日期', dataIndex: 'date', width: 110 },
-                    {
-                      title: '状态',
-                      dataIndex: 'status',
-                      width: 100,
-                      render: (s: TradeRecord['status']) => (
-                        <Tag color={TRADE_STATUS_COLOR[s]}>{s}</Tag>
-                      ),
-                    },
-                  ]}
-                />
-              </div>
-            )}
-          </>
-        );
       default:
         return null;
     }

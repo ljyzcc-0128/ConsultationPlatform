@@ -5,28 +5,35 @@ import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeProvider';
 
 /**
+ * JIP 网关 IAM4_OAuth_getCode：晶彩账号密码认证入口（公开地址，无密钥）。
+ * 跳转后晶彩完成账号密码认证，IAM 按登记的回调地址 302 回
+ * /api/auth/sso/callback?code=...，由后端 SSO 主流程签发 JWT。
+ * 可用环境变量 VITE_IAM_AUTHORIZE_URL / VITE_IAM_CLIENT_ID 覆盖。
+ */
+const IAM_AUTHORIZE_URL =
+  (import.meta.env.VITE_IAM_AUTHORIZE_URL as string | undefined)
+    ?? 'https://jiptest.jinkosolar.com/JIP/IAM/IAM4_OAuth_getCode/1.0.0';
+const IAM_CLIENT_ID =
+  (import.meta.env.VITE_IAM_CLIENT_ID as string | undefined) ?? 'APP189';
+
+/**
  * 登录页
  *
- * 页面底部可在两种认证方式间随时切换（运行时状态，无需重新构建）：
- * - LOCAL 模式（开发）：仅输入用户名即可登录。
- * - IAM 模式：输入用户名 + 密码，凭据发送后端 IamAuthProvider 验证。
- *
- * 构建期默认值由环境变量 VITE_AUTH_PROVIDER=IAM 控制（默认 LOCAL）。
+ * 两种登录方式：
+ * - 本地模式（开发）：仅输入用户名即可登录（LOCAL 认证，免密）。
+ * - IAM（晶彩）账号登录：整页跳转 JIP 网关 IAM4_OAuth_getCode 授权端点，
+ *   在晶彩账号密码认证页完成登录后，IAM 302 回 /api/auth/sso/callback 携带 code，
+ *   复用单点登录主流程换 token 并签发 JWT（/sso/landing 落地）。
  *
  * 工业风双主题（暖白亮色 / 深绿暗色）由全局 theme.css 控制。
  */
-const DEFAULT_PROVIDER =
-  (import.meta.env.VITE_AUTH_PROVIDER ?? 'LOCAL') === 'IAM' ? 'IAM' : 'LOCAL';
-
-type AuthMode = 'LOCAL' | 'IAM';
-
-type LoginForm = { username: string; password?: string };
+type LoginForm = { username: string };
 
 function FieldError({
   name,
   form,
 }: {
-  name: 'username' | 'password';
+  name: 'username';
   form: FormInstance<LoginForm>;
 }) {
   return (
@@ -58,29 +65,29 @@ export function LoginPage() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [submitting, setSubmitting] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode>(DEFAULT_PROVIDER);
-  const isIam = authMode === 'IAM';
+  const [redirecting, setRedirecting] = useState(false);
   const [form] = Form.useForm<LoginForm>();
-
-  /* 切换认证方式：清掉密码值与校验状态，避免残留报错 */
-  const switchMode = (mode: AuthMode) => {
-    if (mode === authMode) return;
-    setAuthMode(mode);
-    form.resetFields(['password']);
-  };
 
   const onFinish = async (values: LoginForm) => {
     setSubmitting(true);
     try {
-      const credential = isIam ? values.password ?? '' : '';
-      await login(values.username.trim(), authMode, credential);
+      await login(values.username.trim(), 'LOCAL', '');
       const from = (location.state as { from?: string } | null)?.from ?? '/feed';
       navigate(from, { replace: true });
     } catch {
-      message.error(isIam ? '用户名或密码错误' : '登录失败，请检查用户名');
+      message.error('登录失败，请检查用户名');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  /* IAM 登录入口：整页跳转 JIP 网关 getCode，回调地址按当前站点自动拼接 */
+  const startIamLogin = () => {
+    setRedirecting(true);
+    const callback = `${window.location.origin}/api/auth/sso/callback`;
+    window.location.href =
+      `${IAM_AUTHORIZE_URL}?client_id=${encodeURIComponent(IAM_CLIENT_ID)}` +
+      `&response_type=code&redirect_uri=${encodeURIComponent(callback)}`;
   };
 
   return (
@@ -100,7 +107,7 @@ export function LoginPage() {
         <Form<LoginForm>
           form={form}
           onFinish={onFinish}
-          initialValues={{ username: DEFAULT_PROVIDER === 'IAM' ? '' : 'admin' }}
+          initialValues={{ username: 'admin' }}
           layout="vertical"
         >
           <div className="brand">
@@ -130,30 +137,6 @@ export function LoginPage() {
             <FieldError name="username" form={form} />
           </div>
 
-          {isIam && (
-            <div className="field">
-              <label htmlFor="login-password">
-                <span className="req">*</span>密码
-              </label>
-              <div className="input-wrap">
-                <Form.Item<LoginForm>
-                  name="password"
-                  rules={[{ required: true, message: '请输入密码' }]}
-                  noStyle
-                >
-                  <input
-                    id="login-password"
-                    className="login-input"
-                    type="password"
-                    placeholder="请输入密码"
-                    autoComplete="current-password"
-                  />
-                </Form.Item>
-              </div>
-              <FieldError name="password" form={form} />
-            </div>
-          )}
-
           <button
             className="btn-login"
             type="submit"
@@ -163,29 +146,15 @@ export function LoginPage() {
           </button>
 
           <div className="footnote">
-            {isIam ? (
-              <>
-                通过公司 IAM 系统认证 ·{' '}
-                <button
-                  type="button"
-                  className="footnote-link"
-                  onClick={() => switchMode('LOCAL')}
-                >
-                  本地账号登录
-                </button>
-              </>
-            ) : (
-              <>
-                开发模式（LOCAL 认证，免密） ·{' '}
-                <button
-                  type="button"
-                  className="footnote-link"
-                  onClick={() => switchMode('IAM')}
-                >
-                  IAM 账号登录
-                </button>
-              </>
-            )}
+            企业用户（晶彩账号） ·{' '}
+            <button
+              type="button"
+              className="footnote-link"
+              onClick={startIamLogin}
+              disabled={redirecting}
+            >
+              {redirecting ? '跳转中…' : 'IAM 账号登录'}
+            </button>
           </div>
         </Form>
       </div>

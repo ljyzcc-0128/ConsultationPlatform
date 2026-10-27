@@ -15,7 +15,7 @@ import java.util.List;
  * </ol>
  *
  * <p>启用方式：设置 ums.security.sso.enabled=true，并通过环境变量注入凭证：
- * client_secret 只走环境变量 UMS_SSO_CLIENT_SECRET，不进代码与仓库。
+ * client_secret 只走环境变量 UMS_SECURITY_SSO_CLIENTSECRET，不进代码与仓库。
  */
 @ConfigurationProperties(prefix = "ums.security.sso")
 public class SsoProperties {
@@ -27,10 +27,7 @@ public class SsoProperties {
     /** 是否启用晶彩单点登录 */
     private boolean enabled = false;
 
-    /** IAM 授权端点（晶彩工作台/消息卡片配置的入口链接） */
-    private String authorizeUrl = "https://iam.jinkosolar.com/sso/oidc1/dAuthorize";
-
-    /** IAM 换取 Token 端点（POST 授权码换 access_token） */
+    /** IAM 换取 Token 端点（POST 授权码换 access_token；响应可直接携带用户身份） */
     private String tokenUrl;
 
     /**
@@ -41,13 +38,16 @@ public class SsoProperties {
      */
     private TokenAuthMode tokenAuthMode = TokenAuthMode.FORM;
 
-    /** IAM 获取用户信息端点（GET Bearer access_token） */
+    /**
+     * IAM 获取用户信息端点（可选）：token 响应未携带用户身份时才需要。
+     * 留空时若 token 响应中也无用户字段，登录将报“未返回用户唯一标识”。
+     */
     private String userinfoUrl;
 
     /** OAuth 2.0 应用编码（IAM 分配） */
     private String clientId;
 
-    /** OAuth 2.0 应用密钥（仅环境变量 UMS_SSO_CLIENT_SECRET 注入） */
+    /** OAuth 2.0 应用密钥（仅环境变量 UMS_SECURITY_SSO_CLIENTSECRET 注入） */
     private String clientSecret;
 
     /**
@@ -61,13 +61,21 @@ public class SsoProperties {
      * 例如 http://localhost:5173/sso/landing（开发）
      *      https://ums.example.com/sso/landing（生产）
      */
-    private String frontendLandingUrl = "http://localhost:5173/sso/landing";
+    private String frontendLandingUrl = "http://10.21.13.77/sso/landing";
 
     /** 调用 IAM 接口超时秒数 */
     private int timeoutSeconds = 10;
 
     /** 首次单点登录是否自动创建 cp_user */
     private boolean autoProvision = true;
+
+    /**
+     * 联调旁路开关（仅测试环境使用）：true 时回调跳过 IAM 全部校验
+     * （不换 token、不调 userinfo、不做一致性校验），
+     * 直接以固定测试账号 debug_test 签发 JWT 进入业务页面。
+     * 生产环境必须为 false（默认值），或用环境变量 UMS_SECURITY_SSO_DEBUGBYPASS 覆盖。
+     */
+    private boolean debugBypass = false;
 
     /** 新建用户的默认角色 */
     private List<String> defaultRoles = List.of("USER");
@@ -76,9 +84,6 @@ public class SsoProperties {
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-
-    public String getAuthorizeUrl() { return authorizeUrl; }
-    public void setAuthorizeUrl(String authorizeUrl) { this.authorizeUrl = authorizeUrl; }
 
     public String getTokenUrl() { return tokenUrl; }
     public void setTokenUrl(String tokenUrl) { this.tokenUrl = tokenUrl; }
@@ -106,6 +111,9 @@ public class SsoProperties {
 
     public boolean isAutoProvision() { return autoProvision; }
     public void setAutoProvision(boolean autoProvision) { this.autoProvision = autoProvision; }
+
+    public boolean isDebugBypass() { return debugBypass; }
+    public void setDebugBypass(boolean debugBypass) { this.debugBypass = debugBypass; }
 
     public List<String> getDefaultRoles() { return defaultRoles; }
     public void setDefaultRoles(List<String> defaultRoles) { this.defaultRoles = defaultRoles; }
