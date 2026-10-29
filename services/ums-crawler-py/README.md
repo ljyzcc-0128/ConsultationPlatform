@@ -27,7 +27,7 @@
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m uvicorn api.app:app --host 0.0.0.0 --port 8100
+python -m uvicorn api.trigger:app --host 0.0.0.0 --port 8100
 ```
 
 验证与触发：

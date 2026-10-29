@@ -36,37 +36,52 @@ ums:
       api-key: "IAM4_OAuth_getUserInfo_header1"                          # TODO：网关分配的 API Key
       bearer-token: ""
     # ---------- 晶彩单点登录（IAM OAuth 2.0 授权码模式 · JIP 测试环境） ----------
-    # 本地调试配置（2026-10-26，凭证来源：JIP 测试租户 IAM4 系列接口）
-    #   1. token-url —— TODO 待确认：JIP 控制台「IAM4-OAuth2.0获取token」接口地址，
-    #      拿到后替换；为空时调用 SSO 会明确报"单点登录配置缺失"，不影响启动
-    #   2. userinfo-url —— JIP 网关「IAM4-OAuth2.0获取userInfo-header1」接口（POST + Bearer）
-    #   3. callback-url —— 本机调试用 localhost:8080；若 IAM 校验回调白名单，
-    #      需让 IAM 负责人（石正浩）把该地址加进 APP189 的回调登记
-    #   4. frontend-landing-url —— 本机前端 dev server 地址（npm run dev 默认 5173）
+    # 凭证来源：JIP 测试租户 APP189；接口以《晶科能源IAM-OAuth2.0单点认证集成文档》为准
+    #   getCode（浏览器跳转拿授权码）：登录页"IAM 账号登录"按钮直连，前端常量配置
+    #   getToken / getUserInfo（后端调用）：下方 token-url / userinfo-url
+    #   callback-url：77 服务器回调；若 IAM 校验回调白名单，
+    #     需让 IAM 负责人（石正浩）把该地址加进 APP189 的回调登记
     sso:
       enabled: true
-      # token 端点（JIP 网关 IAM4_OAuth_getToken）：code 换 access_token；
-      # 若响应直接携带用户身份则不再调用 userinfo（userinfo-url 可不配）
+      # 授权端点（JIP 网关 IAM4_OAuth_getCode）：浏览器整页跳转用，
+      # 前端通过 GET /api/auth/sso/config 动态读取，换环境只改这里/环境变量
+      authorize-url: "https://jiptest.jinkosolar.com/JIP/IAM/IAM4_OAuth_getCode/1.0.0"
+      # token 端点（JIP 网关 IAM4_OAuth_getToken）：POST 表单 code 换 access_token（文档 2.2 节）
       token-url: "https://jiptest.jinkosolar.com/JIP/IAM/IAM4_OAuth_getToken/1.0.0"
-      userinfo-url: ""
+      # userinfo 端点（JIP 网关 IAM4_OAuth_getUserInfo_header1）：必填！
+      # token 响应不含用户字段，必须 POST 表单 access_token 换 uid（文档 2.3 节）
+      userinfo-url: "https://jiptest.jinkosolar.com/JIP/IAM/IAM4_Oauth_getUserInfo_header1/1.0.0"
       client-id: "APP189"
       client-secret: "ea5a6708-8669-4c1d-860d-449b4068"   # 测试凭证，仅 dev 环境使用
       callback-url: "http://10.21.13.77/api/auth/sso/callback"
-      token-auth-mode: FORM
       frontend-landing-url: http://10.21.13.77/sso/landing
+      # JIP 网关鉴权（《晶科能源JIP-接口鉴权说明》第 2 节）：
+      #   NONE —— 静态透传 gateway-authorization（KeyAuth-Header 方式，
+      #           或 KeyAuth-Params 把 Key 直接拼进上面两个 URL；手工验证 HMAC 也走这里）
+      #   JWT  —— 内网推荐方式，每次请求动态生成网关 JWT（Authorization: Bearer，5 分钟有效）：
+      #     gateway-auth-mode: JWT
+      #     gateway-username: "<JIP 平台租户 jwtKey>"      # JWT iss 字段
+      #     gateway-secret 走环境变量 UMS_SECURITY_SSO_GATEWAYSECRET（HMAC256 签名密钥，不入库）
+      gateway-auth-mode: NONE
+      gateway-username: ""
+      gateway-secret: "${UMS_SECURITY_SSO_GATEWAYSECRET:}"
+      gateway-authorization: ""
+      gateway-date-header: ""
       # 联调旁路（仅测试环境！）：true = 回调跳过 IAM 校验，
       # 直接以测试账号 debug_test（USER+ADMIN）签发 JWT 进入业务页面。
       # IAM 出网打通后改回 false 即恢复真实校验（生产默认 false）
-      debug-bypass: true
+      debug-bypass: false
 
   admin:
     token: ""
 
   crawler:
-    base-url: ${UMS_CRAWLER_URL:http://localhost:8100}
+    base-url: ${UMS_CRAWLER_URL:http://10.21.13.77:8100}          # 爬虫服务地址（77 服务器按实际部署端口配）
+    connect-timeout-seconds: 5                                  # 爬虫不在线时快速失败
+    response-timeout-seconds: 60                                # 抓取为慢操作，单次触发等待上限
 
   mgmt:
-    base-url: ${UMS_MGMT_URL:http://127.0.0.1:15672}
+    base-url: ${UMS_MGMT_URL:http://10.21.13.77:15672}
     user: ${UMS_MGMT_USER:ums_admin}
     password: ${UMS_MGMT_PASSWORD:1eAODIRLqpRazsxV}
 
@@ -76,11 +91,11 @@ ums:
     app-secret: "${UMS_JINGCAI_APP_SECRET:}"                # 走环境变量，不入库（本地调试：export UMS_JINGCAI_APP_SECRET=<完整Secret>）
     agent-id: "5099743148"
     receivers: "971880798"                 # TODO：接收人钉钉 userid，逗号分隔
-    card-link: "http://10.21.13.77/supply-chain"
+    card-link: "${UMS_JINGCAI_CARDLINK:http://10.21.13.77/supply-chain}"   # 卡片跳转地址，生产用环境变量覆盖
 
   xxl-job:
     enabled: false
-    admin-addresses: http://127.0.0.1:8081/xxl-job-admin
+    admin-addresses: http://10.21.13.77:8081/xxl-job-admin
     access-token: default_token
 
 logging:

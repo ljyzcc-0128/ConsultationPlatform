@@ -4,7 +4,7 @@ spring:
 
   # 默认激活 dev，生产通过启动参数/环境变量覆盖
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
   # Flyway 公共配置（连接信息在各自 profile 中）
   flyway:

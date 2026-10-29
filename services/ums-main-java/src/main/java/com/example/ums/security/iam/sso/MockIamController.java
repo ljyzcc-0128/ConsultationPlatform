@@ -5,7 +5,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -89,7 +88,7 @@ public class MockIamController {
 
     /**
      * 模拟 token 端点：标准 OAuth2 表单换 token，code 一次性。
-     * 兼容两种 client 凭证传递方式（FORM 表单 / BASIC 请求头），便于两种模式回归。
+     * client 凭证放表单 client_id/client_secret（与文档 2.2 节一致，mock 只校验存在性）。
      */
     @PostMapping(value = "/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Map<String, Object>> token(
@@ -97,24 +96,11 @@ public class MockIamController {
             @RequestParam String code,
             @RequestParam(required = false) String client_id,
             @RequestParam(required = false) String client_secret,
-            @RequestParam(required = false) String redirect_uri,
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
+            @RequestParam(required = false) String redirect_uri) {
         if (!"authorization_code".equals(grant_type)) {
             return ResponseEntity.badRequest().body(Map.of("error", "unsupported_grant_type"));
         }
-        // BASIC 模式：解析 Authorization: Basic base64(client_id:client_secret)；
-        // FORM 模式：凭证在表单 client_id/client_secret（mock 不校验具体值，只校验存在性）
-        if (authorization != null && authorization.startsWith("Basic ")) {
-            try {
-                String decoded = new String(java.util.Base64.getDecoder()
-                        .decode(authorization.substring(6)), StandardCharsets.UTF_8);
-                if (!decoded.contains(":") || decoded.split(":", 2)[0].isBlank()) {
-                    return ResponseEntity.status(401).body(Map.of("error", "invalid_client"));
-                }
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(401).body(Map.of("error", "invalid_client"));
-            }
-        } else if (client_id == null || client_id.isBlank()) {
+        if (client_id == null || client_id.isBlank()) {
             return ResponseEntity.status(401).body(Map.of("error", "invalid_client"));
         }
         String identity = grants.remove(code);
@@ -125,26 +111,31 @@ public class MockIamController {
         tokens.put(accessToken, identity);
         return ResponseEntity.ok(Map.of(
                 "access_token", accessToken,
-                "token_type", "Bearer",
-                "expires_in", 3600));
+                "token_type", "bearer",
+                "expires_in", 1800));
     }
 
-    /** 模拟 userinfo 端点：Bearer token 返回 mock 用户信息 */
-    @GetMapping("/userinfo")
+    /**
+     * 模拟 userinfo 端点（文档 2.3 节）：POST 表单携带 access_token，
+     * 响应结构对齐文档示例 {"ret":0,"msg":"","uid":...} 并附带常用用户字段。
+     */
+    @PostMapping(value = "/userinfo", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Map<String, Object>> userinfo(
-            @RequestHeader(value = "Authorization", required = false) String auth) {
-        String token = auth != null && auth.startsWith("Bearer ") ? auth.substring(7) : null;
-        String identity = token != null ? tokens.get(token) : null;
+            @RequestParam(value = "access_token", required = false) String accessToken) {
+        String identity = accessToken != null ? tokens.get(accessToken) : null;
         if (identity == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "invalid_token"));
+            return ResponseEntity.status(401).body(Map.of("ret", -1, "msg", "invalid_token"));
         }
         String[] parts = identity.split("\\|", 2);
         String externalId = parts[0];
         String display = parts.length > 1 ? parts[1] : externalId;
-        return ResponseEntity.ok(Map.of(
-                "externalId", externalId,
-                "username", externalId.toLowerCase(),
-                "displayName", display,
-                "email", externalId.toLowerCase() + "@mock.jinkosolar.com"));
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("ret", 0);
+        body.put("msg", "");
+        body.put("uid", externalId);
+        body.put("username", externalId.toLowerCase());
+        body.put("displayName", display);
+        body.put("email", externalId.toLowerCase() + "@mock.jinkosolar.com");
+        return ResponseEntity.ok(body);
     }
 }

@@ -48,6 +48,23 @@ public class SsoAuthController {
     }
 
     /**
+     * 前端登录页动态读取 SSO 授权配置（公开接口，/api/auth/sso/** 已 permitAll）。
+     * authorize-url / client-id 随后端 yml 或环境变量切换，
+     * 前端无需写死地址、换环境无需重建。client_id 本身即 OAuth 公开字段。
+     */
+    @GetMapping("/config")
+    public java.util.Map<String, String> config() {
+        return java.util.Map.of(
+                "enabled", String.valueOf(ssoProperties.isEnabled()),
+                "authorizeUrl", orEmpty(ssoProperties.getAuthorizeUrl()),
+                "clientId", orEmpty(ssoProperties.getClientId()));
+    }
+
+    private String orEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    /**
      * OAuth 2.0 回调：接收 IAM 重定向携带的授权码。
      *
      * @param code         授权码

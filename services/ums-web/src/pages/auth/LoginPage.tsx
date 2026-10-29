@@ -5,16 +5,11 @@ import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeProvider';
 
 /**
- * JIP 网关 IAM4_OAuth_getCode：晶彩账号密码认证入口（公开地址，无密钥）。
- * 跳转后晶彩完成账号密码认证，IAM 按登记的回调地址 302 回
- * /api/auth/sso/callback?code=...，由后端 SSO 主流程签发 JWT。
- * 可用环境变量 VITE_IAM_AUTHORIZE_URL / VITE_IAM_CLIENT_ID 覆盖。
+ * IAM 授权配置动态获取：运行时请求后端 GET /api/auth/sso/config
+ * （返回 authorizeUrl / clientId / enabled，随后端 yml 或环境变量切换，
+ * 换环境无需重建前端）。后端不可达时降级用构建期变量
+ * VITE_IAM_AUTHORIZE_URL / VITE_IAM_CLIENT_ID；代码中不写死任何环境地址。
  */
-const IAM_AUTHORIZE_URL =
-  (import.meta.env.VITE_IAM_AUTHORIZE_URL as string | undefined)
-    ?? 'https://jiptest.jinkosolar.com/JIP/IAM/IAM4_OAuth_getCode/1.0.0';
-const IAM_CLIENT_ID =
-  (import.meta.env.VITE_IAM_CLIENT_ID as string | undefined) ?? 'APP189';
 
 /**
  * 登录页
@@ -81,13 +76,44 @@ export function LoginPage() {
     }
   };
 
-  /* IAM 登录入口：整页跳转 JIP 网关 getCode，回调地址按当前站点自动拼接 */
-  const startIamLogin = () => {
+  /* IAM 登录入口：整页跳转 JIP 网关 getCode，回调地址按当前站点自动拼接。
+   * 授权地址/租户 ID 运行时从后端 /api/auth/sso/config 动态读取，
+   * 后端不可达时降级构建期 VITE_IAM_* 变量；均不可用则提示配置缺失 */
+  const startIamLogin = async () => {
     setRedirecting(true);
     const callback = `${window.location.origin}/api/auth/sso/callback`;
-    window.location.href =
-      `${IAM_AUTHORIZE_URL}?client_id=${encodeURIComponent(IAM_CLIENT_ID)}` +
+    const buildRedirect = (authorizeUrl: string, clientId: string) =>
+      `${authorizeUrl}?client_id=${encodeURIComponent(clientId)}` +
       `&response_type=code&redirect_uri=${encodeURIComponent(callback)}`;
+    try {
+      const res = await fetch('/api/auth/sso/config');
+      if (res.ok) {
+        const cfg = (await res.json()) as {
+          enabled?: string;
+          authorizeUrl?: string;
+          clientId?: string;
+        };
+        if (cfg.enabled === 'false') {
+          message.warning('IAM 登录未启用（后端 sso.enabled=false）');
+          setRedirecting(false);
+          return;
+        }
+        if (cfg.authorizeUrl && cfg.clientId) {
+          window.location.href = buildRedirect(cfg.authorizeUrl, cfg.clientId);
+          return;
+        }
+      }
+    } catch {
+      /* 后端不可达，降级构建期变量 */
+    }
+    const authorizeUrl = import.meta.env.VITE_IAM_AUTHORIZE_URL as string | undefined;
+    const clientId = import.meta.env.VITE_IAM_CLIENT_ID as string | undefined;
+    if (authorizeUrl && clientId) {
+      window.location.href = buildRedirect(authorizeUrl, clientId);
+      return;
+    }
+    message.error('IAM 登录配置缺失：后端 /api/auth/sso/config 不可达，且未配置 VITE_IAM_* 变量');
+    setRedirecting(false);
   };
 
   return (

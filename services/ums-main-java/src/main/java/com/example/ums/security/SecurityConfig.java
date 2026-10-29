@@ -42,6 +42,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/search").permitAll()
                 .requestMatchers("/api/v1/contents/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                // 内部服务间调用（爬虫 /internal/trigger、AI 补加工 /internal/ai 等），一期内网信任不鉴权
+                .requestMatchers("/internal/**").permitAll()
                 .requestMatchers("/api/me/**").authenticated()
                 .requestMatchers("/api/v1/supply-chain/**").authenticated()
                 .anyRequest().authenticated())
