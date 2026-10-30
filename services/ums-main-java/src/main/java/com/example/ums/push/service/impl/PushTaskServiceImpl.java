@@ -9,20 +9,17 @@ import com.example.ums.push.service.PushTaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 /** 推送任务管理实现。 */
 @Service
+@RequiredArgsConstructor
 public class PushTaskServiceImpl implements PushTaskService {
 
     private final PushTaskMapper pushTaskMapper;
     private final PushMessageMapper pushMessageMapper;
-
-    public PushTaskServiceImpl(PushTaskMapper pushTaskMapper, PushMessageMapper pushMessageMapper) {
-        this.pushTaskMapper = pushTaskMapper;
-        this.pushMessageMapper = pushMessageMapper;
-    }
 
     @Override
     public List<PushTaskDto> list() {

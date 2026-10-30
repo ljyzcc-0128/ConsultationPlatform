@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -32,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 @RestController
 @RequestMapping("/api/auth/sso")
 @EnableConfigurationProperties(SsoProperties.class)
+@RequiredArgsConstructor
 public class SsoAuthController {
 
     private static final Logger log = LoggerFactory.getLogger(SsoAuthController.class);
@@ -39,13 +41,6 @@ public class SsoAuthController {
     private final SsoService ssoService;
     private final SsoProperties ssoProperties;
     private final JwtTokenProvider jwtTokenProvider;
-
-    public SsoAuthController(SsoService ssoService, SsoProperties ssoProperties,
-            JwtTokenProvider jwtTokenProvider) {
-        this.ssoService = ssoService;
-        this.ssoProperties = ssoProperties;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     /**
      * 前端登录页动态读取 SSO 授权配置（公开接口，/api/auth/sso/** 已 permitAll）。

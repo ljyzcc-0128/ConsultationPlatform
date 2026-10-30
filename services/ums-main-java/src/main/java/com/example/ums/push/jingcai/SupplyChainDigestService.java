@@ -4,6 +4,7 @@ import com.example.ums.supplychain.dto.IndicatorSeriesDto;
 import com.example.ums.supplychain.dto.InventoryBlockDto;
 import com.example.ums.supplychain.service.SupplyChainService;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,15 +21,12 @@ import java.util.List;
  * 数据口径与 /v1/supply-chain 接口完全一致，不另建查询。
  */
 @Service
+@RequiredArgsConstructor
 public class SupplyChainDigestService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("M月d日");
 
     private final SupplyChainService supplyChainService;
-
-    public SupplyChainDigestService(SupplyChainService supplyChainService) {
-        this.supplyChainService = supplyChainService;
-    }
 
     /** 卡片内容 */
     public record DigestCard(String title, String markdown) {

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
@@ -21,13 +22,10 @@ import static org.springframework.http.HttpStatus.CREATED;
 /** 用户管理接口。 */
 @RestController
 @RequestMapping("/api/v1/admin/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     /** 用户列表。 */
     @GetMapping

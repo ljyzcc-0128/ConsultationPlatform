@@ -6,6 +6,7 @@ import com.example.ums.ai.service.QaService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 智能问答 REST 接口（对登录用户）。
@@ -14,13 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
  * 问答调用 GLM 消耗 API 费用，不开放匿名访问。
  */
 @RestController
+@RequiredArgsConstructor
 public class QaController {
 
     private final QaService qaService;
-
-    public QaController(QaService qaService) {
-        this.qaService = qaService;
-    }
 
     /**
      * 智能问答：优先基于平台采集资讯回答（RAG，带引用来源）；

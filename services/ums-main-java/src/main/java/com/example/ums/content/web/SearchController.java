@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 全文搜索接口（ngram 全文索引）。
@@ -15,13 +16,10 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @RestController
 @RequestMapping("/api/v1/search")
+@RequiredArgsConstructor
 public class SearchController {
 
     private final ContentSearchService searchService;
-
-    public SearchController(ContentSearchService searchService) {
-        this.searchService = searchService;
-    }
 
     /**
      * 全文搜索。

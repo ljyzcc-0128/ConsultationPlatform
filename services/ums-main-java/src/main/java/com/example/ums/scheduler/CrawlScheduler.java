@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,6 +27,7 @@ import java.util.List;
  * 单实例执行器（一期单机）；多实例时在调度中心配置路由策略=第一个或故障转移。
  */
 @Component
+@RequiredArgsConstructor
 public class CrawlScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(CrawlScheduler.class);
@@ -33,14 +35,6 @@ public class CrawlScheduler {
     private final AdminSourceMapper sourceMapper;
     private final CrawlTriggerClient triggerClient;
     private final SchedulerProperties properties;
-
-    public CrawlScheduler(AdminSourceMapper sourceMapper,
-                          CrawlTriggerClient triggerClient,
-                          SchedulerProperties properties) {
-        this.sourceMapper = sourceMapper;
-        this.triggerClient = triggerClient;
-        this.properties = properties;
-    }
 
     /** XXL-JOB 任务入口：触发所有到期信源。任务参数（可选）：覆盖单次抓取条数 limit。 */
     @XxlJob("crawlScheduledJob")

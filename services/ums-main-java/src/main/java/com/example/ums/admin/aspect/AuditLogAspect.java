@@ -10,6 +10,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.Map;
  */
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class AuditLogAspect {
 
     private static final Logger log = LoggerFactory.getLogger(AuditLogAspect.class);
@@ -29,10 +31,6 @@ public class AuditLogAspect {
     private final AuditLogMapper auditLogMapper;
     /** findAndRegisterModules 注册 JavaTimeModule，否则含 LocalDateTime 的结果序列化失败退化为 toString */
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
-
-    public AuditLogAspect(AuditLogMapper auditLogMapper) {
-        this.auditLogMapper = auditLogMapper;
-    }
 
     @Around("@annotation(audited)")
     public Object around(ProceedingJoinPoint jp, Audited audited) throws Throwable {

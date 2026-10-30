@@ -13,12 +13,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
 
 /** 用户管理实现。 */
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private static final String DEFAULT_PROVIDER = "LOCAL";
@@ -26,11 +28,6 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final ObjectMapper objectMapper;
-
-    public UserServiceImpl(UserMapper userMapper, ObjectMapper objectMapper) {
-        this.userMapper = userMapper;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public List<UserDto> list() {

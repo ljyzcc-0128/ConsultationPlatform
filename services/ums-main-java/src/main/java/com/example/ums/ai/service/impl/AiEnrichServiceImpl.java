@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map;
  * - classify 失败 → 记 FAILED 日志，降级继续（分类非关键，可后续补）
  */
 @Service
+@RequiredArgsConstructor
 public class AiEnrichServiceImpl implements AiEnrichService {
 
     private static final Logger log = LoggerFactory.getLogger(AiEnrichServiceImpl.class);
@@ -40,20 +42,6 @@ public class AiEnrichServiceImpl implements AiEnrichService {
     private final AIProcessingService aiService;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-
-    public AiEnrichServiceImpl(NewsMapper newsMapper,
-                               NewsContentMapper newsContentMapper,
-                               AiLogMapper aiLogMapper,
-                               AIProcessingService aiService,
-                               RabbitTemplate rabbitTemplate,
-                               ObjectMapper objectMapper) {
-        this.newsMapper = newsMapper;
-        this.newsContentMapper = newsContentMapper;
-        this.aiLogMapper = aiLogMapper;
-        this.aiService = aiService;
-        this.rabbitTemplate = rabbitTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public void enrich(String articleId) {

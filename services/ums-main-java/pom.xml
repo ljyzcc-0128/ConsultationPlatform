@@ -98,6 +98,13 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
+        <!-- Lombok：@RequiredArgsConstructor 等样板代码消除（版本随 Boot parent 管理） -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

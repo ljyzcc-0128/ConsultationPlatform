@@ -9,23 +9,19 @@ import com.example.ums.subscription.model.CpSubscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 /** 推送匹配实现：资讯处理完成后按订阅规则生成站内消息。 */
 @Service
+@RequiredArgsConstructor
 public class PushMatchingServiceImpl implements PushMatchingService {
 
     private static final Logger log = LoggerFactory.getLogger(PushMatchingServiceImpl.class);
 
     private final SubscriptionMapper subscriptionMapper;
     private final PushMessageMapper pushMessageMapper;
-
-    public PushMatchingServiceImpl(SubscriptionMapper subscriptionMapper,
-                                   PushMessageMapper pushMessageMapper) {
-        this.subscriptionMapper = subscriptionMapper;
-        this.pushMessageMapper = pushMessageMapper;
-    }
 
     @Override
     public void onArticleProcessed(String articleId) {

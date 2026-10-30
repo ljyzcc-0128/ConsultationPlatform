@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,6 +35,7 @@ import java.util.List;
  */
 @Component
 @EnableConfigurationProperties(JingcaiProperties.class)
+@RequiredArgsConstructor
 public class JingcaiCardSender {
 
     private static final Logger log = LoggerFactory.getLogger(JingcaiCardSender.class);
@@ -54,10 +56,6 @@ public class JingcaiCardSender {
             .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(5))
             .build();
-
-    public JingcaiCardSender(JingcaiProperties props) {
-        this.props = props;
-    }
 
     /**
      * 发送供应链日报卡片到配置的接收人。

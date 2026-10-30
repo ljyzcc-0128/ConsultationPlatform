@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -45,6 +46,7 @@ import java.util.List;
  */
 @Service
 @EnableConfigurationProperties(SsoProperties.class)
+@RequiredArgsConstructor
 public class SsoService {
 
     private static final Logger log = LoggerFactory.getLogger(SsoService.class);
@@ -59,11 +61,6 @@ public class SsoService {
             // 部分网关/IAM 端点会 302，标准浏览器语义下应跟随（不跟随 HTTPS→HTTPS 重定向）
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
-
-    public SsoService(SsoProperties props, IamUserStore userStore) {
-        this.props = props;
-        this.userStore = userStore;
-    }
 
     /**
      * 单点登录主流程：授权码 → access_token → 用户信息 → 本地账户。

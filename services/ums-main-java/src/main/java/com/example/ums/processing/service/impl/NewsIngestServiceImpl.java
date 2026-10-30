@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DuplicateKeyException;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ import java.util.UUID;
  * 靠数据库唯一约束 uk_source_urlhash 兜底，重抓/重复消费均走更新。
  */
 @Service
+@RequiredArgsConstructor
 public class NewsIngestServiceImpl implements NewsIngestService {
 
     private static final Logger log = LoggerFactory.getLogger(NewsIngestServiceImpl.class);
@@ -35,14 +37,6 @@ public class NewsIngestServiceImpl implements NewsIngestService {
     private final SourceMapper sourceMapper;
     private final NewsMapper newsMapper;
     private final NewsContentMapper newsContentMapper;
-
-    public NewsIngestServiceImpl(SourceMapper sourceMapper,
-                                 NewsMapper newsMapper,
-                                 NewsContentMapper newsContentMapper) {
-        this.sourceMapper = sourceMapper;
-        this.newsMapper = newsMapper;
-        this.newsContentMapper = newsContentMapper;
-    }
 
     @Override
     @Transactional

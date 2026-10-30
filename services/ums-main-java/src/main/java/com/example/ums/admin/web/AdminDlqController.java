@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -19,13 +20,10 @@ import java.util.Map;
 /** 死信队列管理接口（ADM-002/004：异常处理）。 */
 @RestController
 @RequestMapping("/api/v1/admin/dlq")
+@RequiredArgsConstructor
 public class AdminDlqController {
 
     private final AdminDlqService adminDlqService;
-
-    public AdminDlqController(AdminDlqService adminDlqService) {
-        this.adminDlqService = adminDlqService;
-    }
 
     /** 三个业务死信队列深度。 */
     @GetMapping

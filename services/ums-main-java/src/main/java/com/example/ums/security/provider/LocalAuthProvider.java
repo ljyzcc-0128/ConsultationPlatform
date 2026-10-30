@@ -10,17 +10,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class LocalAuthProvider implements AuthenticationProvider {
     private final UserMapper userMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public LocalAuthProvider(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
 
     @Override
     public String providerId() { return "LOCAL"; }

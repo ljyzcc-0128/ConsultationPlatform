@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 
@@ -19,13 +20,10 @@ import java.time.LocalDate;
  * 契约收口：/api/news 与 /api/v1/contents 同一套方法，分页结构、参数名统一。
  */
 @RestController
+@RequiredArgsConstructor
 public class NewsQueryController {
 
     private final NewsQueryService newsQueryService;
-
-    public NewsQueryController(NewsQueryService newsQueryService) {
-        this.newsQueryService = newsQueryService;
-    }
 
     /**
      * 资讯时间线（游标分页）。

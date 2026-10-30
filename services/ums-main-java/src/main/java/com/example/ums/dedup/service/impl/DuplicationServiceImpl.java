@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import java.util.UUID;
  * - 单消费者串行处理，无并发分裂组的场景
  */
 @Service
+@RequiredArgsConstructor
 public class DuplicationServiceImpl implements DuplicationService {
 
     private static final Logger log = LoggerFactory.getLogger(DuplicationServiceImpl.class);
@@ -43,16 +45,6 @@ public class DuplicationServiceImpl implements DuplicationService {
     private final NewsContentMapper newsContentMapper;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-
-    public DuplicationServiceImpl(NewsMapper newsMapper,
-                                  NewsContentMapper newsContentMapper,
-                                  RabbitTemplate rabbitTemplate,
-                                  ObjectMapper objectMapper) {
-        this.newsMapper = newsMapper;
-        this.newsContentMapper = newsContentMapper;
-        this.rabbitTemplate = rabbitTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public void aggregate(String articleId) {

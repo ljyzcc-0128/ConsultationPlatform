@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/internal/ai")
+@RequiredArgsConstructor
 public class AiInternalController {
 
     private static final int BATCH_LIMIT = 100;
@@ -32,14 +34,6 @@ public class AiInternalController {
     private final NewsMapper newsMapper;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-
-    public AiInternalController(NewsMapper newsMapper,
-                                RabbitTemplate rabbitTemplate,
-                                ObjectMapper objectMapper) {
-        this.newsMapper = newsMapper;
-        this.rabbitTemplate = rabbitTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     @PostMapping("/reprocess")
     public ResponseEntity<Map<String, Object>> reprocess(

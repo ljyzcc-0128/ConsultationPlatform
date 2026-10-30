@@ -11,6 +11,7 @@ import com.example.ums.feed.service.FeedService;
 import com.example.ums.push.dto.PushRecordDto;
 import com.example.ums.push.service.PushMessageService;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -23,22 +24,13 @@ import java.util.stream.Collectors;
  * Feed 服务实现：复用 NewsQueryService 取新闻 + change_events 重大变化 + 已读状态装配。
  */
 @Service
+@RequiredArgsConstructor
 public class FeedServiceImpl implements FeedService {
 
     private final NewsQueryService newsQueryService;
     private final ChangeEventMapper changeEventMapper;
     private final ReadStatusMapper readStatusMapper;
     private final PushMessageService pushMessageService;
-
-    public FeedServiceImpl(NewsQueryService newsQueryService,
-                           ChangeEventMapper changeEventMapper,
-                           ReadStatusMapper readStatusMapper,
-                           PushMessageService pushMessageService) {
-        this.newsQueryService = newsQueryService;
-        this.changeEventMapper = changeEventMapper;
-        this.readStatusMapper = readStatusMapper;
-        this.pushMessageService = pushMessageService;
-    }
 
     @Override
     public List<FeedItemDto> listFeed(String userId, String tab) {

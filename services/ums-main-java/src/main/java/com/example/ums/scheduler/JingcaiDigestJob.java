@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 晶彩卡片推送定时任务：供应链看板日报。
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @EnableConfigurationProperties(JingcaiProperties.class)
+@RequiredArgsConstructor
 public class JingcaiDigestJob {
 
     private static final Logger log = LoggerFactory.getLogger(JingcaiDigestJob.class);
@@ -26,14 +28,6 @@ public class JingcaiDigestJob {
     private final SupplyChainDigestService digestService;
     private final JingcaiCardSender sender;
     private final JingcaiProperties jingcaiProperties;
-
-    public JingcaiDigestJob(SupplyChainDigestService digestService,
-                            JingcaiCardSender sender,
-                            JingcaiProperties jingcaiProperties) {
-        this.digestService = digestService;
-        this.sender = sender;
-        this.jingcaiProperties = jingcaiProperties;
-    }
 
     @XxlJob("jingcaiDigestJob")
     public void execute() {

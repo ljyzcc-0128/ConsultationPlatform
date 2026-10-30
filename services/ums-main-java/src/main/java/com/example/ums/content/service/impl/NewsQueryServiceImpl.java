@@ -15,11 +15,13 @@ import com.example.ums.processing.model.CpNewsContent;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class NewsQueryServiceImpl implements NewsQueryService {
 
     private static final int MAX_LIMIT = 50;
@@ -29,16 +31,6 @@ public class NewsQueryServiceImpl implements NewsQueryService {
     private final NewsContentMapper newsContentMapper;
     private final NewsAnalysisMapper newsAnalysisMapper;
     private final ObjectMapper objectMapper;
-
-    public NewsQueryServiceImpl(NewsMapper newsMapper,
-            NewsContentMapper newsContentMapper,
-            NewsAnalysisMapper newsAnalysisMapper,
-            ObjectMapper objectMapper) {
-        this.newsMapper = newsMapper;
-        this.newsContentMapper = newsContentMapper;
-        this.newsAnalysisMapper = newsAnalysisMapper;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public NewsPageDto listTimeline(String cursor, int limit, String sourceId, String category,

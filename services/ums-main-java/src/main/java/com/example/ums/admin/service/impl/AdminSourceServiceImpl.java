@@ -9,21 +9,17 @@ import com.example.ums.admin.model.CpSource;
 import com.example.ums.admin.service.AdminSourceService;
 import com.example.ums.scheduler.CrawlTriggerClient;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 /** 信源管理实现。 */
 @Service
+@RequiredArgsConstructor
 public class AdminSourceServiceImpl implements AdminSourceService {
 
     private final AdminSourceMapper sourceMapper;
     private final CrawlTriggerClient crawlTriggerClient;
-
-    public AdminSourceServiceImpl(AdminSourceMapper sourceMapper,
-                                   CrawlTriggerClient crawlTriggerClient) {
-        this.sourceMapper = sourceMapper;
-        this.crawlTriggerClient = crawlTriggerClient;
-    }
 
     @Override
     public List<CpSource> list() {

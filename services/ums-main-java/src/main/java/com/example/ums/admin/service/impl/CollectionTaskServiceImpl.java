@@ -6,18 +6,16 @@ import com.example.ums.admin.mapper.CollectionTaskMapper;
 import com.example.ums.admin.model.CpCollectionTask;
 import com.example.ums.admin.service.CollectionTaskService;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 /** 采集任务记录实现。 */
 @Service
+@RequiredArgsConstructor
 public class CollectionTaskServiceImpl implements CollectionTaskService {
 
     private final CollectionTaskMapper collectionTaskMapper;
-
-    public CollectionTaskServiceImpl(CollectionTaskMapper collectionTaskMapper) {
-        this.collectionTaskMapper = collectionTaskMapper;
-    }
 
     @Override
     public List<CollectionTaskDto> list(String sourceId) {

@@ -9,19 +9,17 @@ import com.example.ums.subscription.service.SubscriptionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
 
 /** 用户订阅规则服务实现。 */
 @Service
+@RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final SubscriptionMapper subscriptionMapper;
-
-    public SubscriptionServiceImpl(SubscriptionMapper subscriptionMapper) {
-        this.subscriptionMapper = subscriptionMapper;
-    }
 
     @Override
     public List<SubscriptionDto> listByUser(String userId) {

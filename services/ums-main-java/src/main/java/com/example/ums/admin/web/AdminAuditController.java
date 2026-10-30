@@ -7,19 +7,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 /** 审计日志查询接口（ADM-008，只读；写入由 @Audited 切面自动完成）。 */
 @RestController
 @RequestMapping("/api/v1/admin/audit-logs")
+@RequiredArgsConstructor
 public class AdminAuditController {
 
     private final AuditLogMapper auditLogMapper;
-
-    public AdminAuditController(AuditLogMapper auditLogMapper) {
-        this.auditLogMapper = auditLogMapper;
-    }
 
     /** 按操作类型/对象类型过滤，倒序分页。 */
     @GetMapping

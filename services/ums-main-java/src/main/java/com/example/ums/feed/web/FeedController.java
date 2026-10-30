@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -18,15 +19,11 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/me")
+@RequiredArgsConstructor
 public class FeedController {
 
     private final FeedService feedService;
     private final ReadStatusService readStatusService;
-
-    public FeedController(FeedService feedService, ReadStatusService readStatusService) {
-        this.feedService = feedService;
-        this.readStatusService = readStatusService;
-    }
 
     /**
      * Feed 列表或推送记录。

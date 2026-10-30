@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -16,13 +17,10 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/contents/{id}")
+@RequiredArgsConstructor
 public class ContentRelationController {
 
     private final ContentSearchService searchService;
-
-    public ContentRelationController(ContentSearchService searchService) {
-        this.searchService = searchService;
-    }
 
     /** 相关内容（同 duplicate_group_id 优先，不足按同 category 补充）。 */
     @GetMapping("/related")

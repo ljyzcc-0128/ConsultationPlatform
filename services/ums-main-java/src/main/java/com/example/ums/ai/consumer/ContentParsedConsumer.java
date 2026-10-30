@@ -8,23 +8,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 /**
  * content.parsed 消费者（实现指南 2.1 步骤 4：AI 加工）。
  * 失败重试 3 次后进 DLQ（ums.content.parsed.dlq），可重放。
  */
 @Component
+@RequiredArgsConstructor
 public class ContentParsedConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(ContentParsedConsumer.class);
 
     private final AiEnrichService aiEnrichService;
     private final ObjectMapper objectMapper;
-
-    public ContentParsedConsumer(AiEnrichService aiEnrichService, ObjectMapper objectMapper) {
-        this.aiEnrichService = aiEnrichService;
-        this.objectMapper = objectMapper;
-    }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_CONTENT_PARSED)
     public void onContentParsed(String payload) {

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -23,13 +24,10 @@ import java.util.Map;
 /** 信源管理接口（ADM-001）。 */
 @RestController
 @RequestMapping("/api/v1/admin/sources")
+@RequiredArgsConstructor
 public class AdminSourceController {
 
     private final AdminSourceService adminSourceService;
-
-    public AdminSourceController(AdminSourceService adminSourceService) {
-        this.adminSourceService = adminSourceService;
-    }
 
     /** 信源列表。 */
     @GetMapping

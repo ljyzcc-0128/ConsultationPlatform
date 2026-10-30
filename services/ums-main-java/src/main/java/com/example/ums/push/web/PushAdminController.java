@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -19,22 +20,13 @@ import java.util.Map;
 /** 推送任务管理后台接口。 */
 @RestController
 @RequestMapping("/api/v1/admin/push")
+@RequiredArgsConstructor
 public class PushAdminController {
 
     private final PushTaskService pushTaskService;
     private final SupplyChainDigestService digestService;
     private final JingcaiCardSender jingcaiCardSender;
     private final JingcaiProperties jingcaiProperties;
-
-    public PushAdminController(PushTaskService pushTaskService,
-                              SupplyChainDigestService digestService,
-                              JingcaiCardSender jingcaiCardSender,
-                              JingcaiProperties jingcaiProperties) {
-        this.pushTaskService = pushTaskService;
-        this.digestService = digestService;
-        this.jingcaiCardSender = jingcaiCardSender;
-        this.jingcaiProperties = jingcaiProperties;
-    }
 
     /** 推送任务列表（含统计）。 */
     @GetMapping

@@ -14,6 +14,7 @@ import com.example.ums.processing.model.CpNews;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
  * 内容搜索与关联服务实现。
  */
 @Service
+@RequiredArgsConstructor
 public class ContentSearchServiceImpl implements ContentSearchService {
 
     private static final int MAX_LIMIT = 50;
@@ -31,14 +33,6 @@ public class ContentSearchServiceImpl implements ContentSearchService {
     private final NewsMapper newsMapper;
     private final ChangeEventMapper changeEventMapper;
     private final ObjectMapper objectMapper;
-
-    public ContentSearchServiceImpl(NewsMapper newsMapper,
-            ChangeEventMapper changeEventMapper,
-            ObjectMapper objectMapper) {
-        this.newsMapper = newsMapper;
-        this.changeEventMapper = changeEventMapper;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public NewsPageDto search(String q, String cursor, int limit) {

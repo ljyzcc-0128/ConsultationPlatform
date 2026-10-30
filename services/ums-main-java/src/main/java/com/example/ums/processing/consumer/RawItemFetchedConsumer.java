@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import java.util.Map;
  * content.parsed 在入库成功后发布（AI 加工链路入口，由 ai 包消费）。
  */
 @Component
+@RequiredArgsConstructor
 public class RawItemFetchedConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(RawItemFetchedConsumer.class);
@@ -26,14 +28,6 @@ public class RawItemFetchedConsumer {
     private final ObjectMapper objectMapper;
     private final NewsIngestService newsIngestService;
     private final RabbitTemplate rabbitTemplate;
-
-    public RawItemFetchedConsumer(ObjectMapper objectMapper,
-                                  NewsIngestService newsIngestService,
-                                  RabbitTemplate rabbitTemplate) {
-        this.objectMapper = objectMapper;
-        this.newsIngestService = newsIngestService;
-        this.rabbitTemplate = rabbitTemplate;
-    }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_RAW_ITEM_FETCHED)
     public void onRawItemFetched(String payload) {

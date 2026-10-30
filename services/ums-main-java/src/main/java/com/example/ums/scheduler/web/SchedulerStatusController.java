@@ -9,6 +9,7 @@ import com.example.ums.scheduler.SchedulerProperties;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -19,19 +20,12 @@ import java.util.Map;
 /** 调度状态查询（ADM 系统配置的调度视角，只读）。 */
 @RestController
 @RequestMapping("/api/v1/admin/scheduler")
+@RequiredArgsConstructor
 public class SchedulerStatusController {
 
     private final AdminSourceMapper sourceMapper;
     private final CrawlScheduler crawlScheduler;
     private final SchedulerProperties properties;
-
-    public SchedulerStatusController(AdminSourceMapper sourceMapper,
-                                     CrawlScheduler crawlScheduler,
-                                     SchedulerProperties properties) {
-        this.sourceMapper = sourceMapper;
-        this.crawlScheduler = crawlScheduler;
-        this.properties = properties;
-    }
 
     /** 调度总开关 + 各信源到期状态。 */
     @GetMapping("/status")

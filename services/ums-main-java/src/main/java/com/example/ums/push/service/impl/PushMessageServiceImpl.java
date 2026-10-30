@@ -5,18 +5,16 @@ import com.example.ums.push.mapper.PushMessageMapper;
 import com.example.ums.push.model.PushMessage;
 import com.example.ums.push.service.PushMessageService;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 /** 推送消息查询实现。 */
 @Service
+@RequiredArgsConstructor
 public class PushMessageServiceImpl implements PushMessageService {
 
     private final PushMessageMapper pushMessageMapper;
-
-    public PushMessageServiceImpl(PushMessageMapper pushMessageMapper) {
-        this.pushMessageMapper = pushMessageMapper;
-    }
 
     @Override
     public List<PushRecordDto> listByUser(String userId) {

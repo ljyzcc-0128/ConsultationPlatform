@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,16 +17,13 @@ import java.util.UUID;
  * 供 IAM API 调用模式（IamAuthProvider）与晶彩单点登录（SsoService）共用。
  */
 @Component
+@RequiredArgsConstructor
 public class IamUserStore {
 
     private static final Logger log = LoggerFactory.getLogger(IamUserStore.class);
 
     private final UserMapper userMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public IamUserStore(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
 
     /**
      * 按 external_id + provider=IAM 查找 cp_user；

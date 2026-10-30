@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -65,6 +66,7 @@ import java.util.List;
  */
 @Component
 @EnableConfigurationProperties(IamProperties.class)
+@RequiredArgsConstructor
 public class IamAuthProvider implements AuthenticationProvider {
 
     private static final Logger log = LoggerFactory.getLogger(IamAuthProvider.class);
@@ -77,11 +79,6 @@ public class IamAuthProvider implements AuthenticationProvider {
             .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(5))
             .build();
-
-    public IamAuthProvider(IamProperties iamProperties, IamUserStore userStore) {
-        this.iamProperties = iamProperties;
-        this.userStore = userStore;
-    }
 
     @Override
     public String providerId() {

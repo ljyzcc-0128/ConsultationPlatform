@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.List;
  * 每次调用写 ai_processing_log（operation=qa，AI-003 可追溯）。
  */
 @Service
+@RequiredArgsConstructor
 public class QaServiceImpl implements QaService {
 
     private static final Logger log = LoggerFactory.getLogger(QaServiceImpl.class);
@@ -84,14 +86,6 @@ public class QaServiceImpl implements QaService {
     private final AIProcessingService aiService;
     private final ContentSearchService contentSearchService;
     private final AiLogMapper aiLogMapper;
-
-    public QaServiceImpl(AIProcessingService aiService,
-            ContentSearchService contentSearchService,
-            AiLogMapper aiLogMapper) {
-        this.aiService = aiService;
-        this.contentSearchService = contentSearchService;
-        this.aiLogMapper = aiLogMapper;
-    }
 
     @Override
     public QaAnswerDto ask(String question) {
