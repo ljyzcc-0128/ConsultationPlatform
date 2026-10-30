@@ -94,8 +94,8 @@ ums:
     card-link: "${UMS_JINGCAI_CARDLINK:http://10.21.13.77/supply-chain}"   # 卡片跳转地址，生产用环境变量覆盖
 
   xxl-job:
-    enabled: false
-    admin-addresses: http://10.21.13.77:8081/xxl-job-admin
+    enabled: ${UMS_XXL_JOB_ENABLED:false}              # 联调开启：export UMS_XXL_JOB_ENABLED=true
+    admin-addresses: ${UMS_XXL_ADMIN:http://10.21.13.77:8081/xxl-job-admin}  # 本地联调指向本地调度中心
     access-token: default_token
 
 logging:

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from parsing.date_parser import parse_publish_time
 from runner import run_source
+from supplychain.service import parse_trade_date, run_gfex_collection
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -18,6 +19,12 @@ app = FastAPI(title='ums-crawler', version='1.0.0')
 class TriggerBody(BaseModel):
     since: str | None = None   # 增量起始时间（ISO 8601），可空
     limit: int | None = None   # 限制条数（联调用），可空
+
+
+class SupplyChainTriggerBody(BaseModel):
+    trade_date: str | None = None     # 交易日 yyyy-MM-dd / yyyyMMdd，缺省=今天（非交易日自动回溯）
+    varieties: list[str] | None = None  # 品种代码，缺省=配置全部（lc,si,ps）
+    trigger_type: str | None = None   # SCHEDULED/MANUAL，缺省 MANUAL
 
 
 @app.get('/healthz')
@@ -37,3 +44,16 @@ async def trigger(source_code: str, body: TriggerBody | None = None):
     except ValueError as exc:
         raise HTTPException(status_code=422, detail={'code': 'SRC_4221', 'message': str(exc)})
     return summary
+
+
+@app.post('/internal/trigger/supplychain/gfex')
+async def trigger_gfex(body: SupplyChainTriggerBody | None = None):
+    """广期所仓单采集：采集+发 MQ，数据由 Java 消费者加工落库"""
+    body = body or SupplyChainTriggerBody()
+    try:
+        trade_date = parse_trade_date(body.trade_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail={'code': 'SC_4221', 'message': str(exc)})
+    return await run_gfex_collection(trade_date=trade_date,
+                                     varieties=body.varieties,
+                                     trigger_type=body.trigger_type or 'MANUAL')

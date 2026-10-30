@@ -15,6 +15,14 @@ INTERNAL_API_BASE_URL = os.environ.get('INTERNAL_API_BASE_URL', '')
 
 SELECTORS_DIR = Path(os.environ.get('SELECTORS_DIR', BASE_DIR / 'selectors'))
 
+# 供应链采集（广期所仓单日报）：公开 JSON 接口，POST 表单按品种+交易日查询
+GFEX_BASE_URL = os.environ.get('GFEX_BASE_URL', 'http://www.gfex.com.cn')
+GFEX_VARIETIES = [v.strip() for v in os.environ.get('GFEX_VARIETIES', 'lc,si,ps').split(',') if v.strip()]
+# 非交易日回溯最近交易日的最大天数（长假兜底）
+GFEX_MAX_ROLLBACK_DAYS = int(os.environ.get('GFEX_MAX_ROLLBACK_DAYS', '10'))
+# 供应链消息独立 routing key（与资讯 raw.item.fetched 共用 ums exchange）
+MQ_ROUTING_KEY_WBILL = os.environ.get('MQ_ROUTING_KEY_WBILL', 'supplychain.wbill.fetched')
+
 # 触发接口监听（XXL-JOB HTTP 任务类型调用 POST /internal/trigger/{source_code}）
 HOST = os.environ.get('CRAWLER_HOST', '0.0.0.0')
 PORT = int(os.environ.get('CRAWLER_PORT', '8100'))

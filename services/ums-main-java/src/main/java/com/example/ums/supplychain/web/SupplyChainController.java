@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -19,13 +20,10 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/supply-chain")
+@RequiredArgsConstructor
 public class SupplyChainController {
 
     private final SupplyChainService supplyChainService;
-
-    public SupplyChainController(SupplyChainService supplyChainService) {
-        this.supplyChainService = supplyChainService;
-    }
 
     /** SC-001：原材料市场指标。 */
     @GetMapping("/materials")

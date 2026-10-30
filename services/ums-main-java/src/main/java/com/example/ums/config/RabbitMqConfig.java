@@ -38,6 +38,12 @@ public class RabbitMqConfig {
     public static final String ROUTING_CONTENT_PROCESSED_DEAD = "content.processed.dead";
     public static final String QUEUE_CONTENT_PROCESSED_DLQ = "ums.content.processed.dlq";
 
+    /** 供应链采集（Python 爬虫发布，supplychain 包消费加工落库） */
+    public static final String ROUTING_SUPPLYCHAIN_WBILL_FETCHED = "supplychain.wbill.fetched";
+    public static final String QUEUE_SUPPLYCHAIN_WBILL = "ums.supplychain.wbill.queue";
+    public static final String ROUTING_SUPPLYCHAIN_WBILL_DEAD = "supplychain.wbill.dead";
+    public static final String QUEUE_SUPPLYCHAIN_WBILL_DLQ = "ums.supplychain.wbill.dlq";
+
     /** topic exchange，Python 端已 durable 声明过，参数一致则幂等 */
     @Bean
     public TopicExchange umsExchange() {
@@ -135,5 +141,34 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(contentProcessedDlq())
                 .to(umsDlx())
                 .with(ROUTING_CONTENT_PROCESSED_DEAD);
+    }
+
+    /** 供应链仓单队列：消费 supplychain.wbill.fetched（Python 爬虫发布），失败进 DLQ */
+    @Bean
+    public Queue supplychainWbillQueue() {
+        return QueueBuilder.durable(QUEUE_SUPPLYCHAIN_WBILL)
+                .deadLetterExchange(EXCHANGE_DLX)
+                .deadLetterRoutingKey(ROUTING_SUPPLYCHAIN_WBILL_DEAD)
+                .build();
+    }
+
+    @Bean
+    public Binding supplychainWbillBinding() {
+        return BindingBuilder.bind(supplychainWbillQueue())
+                .to(umsExchange())
+                .with(ROUTING_SUPPLYCHAIN_WBILL_FETCHED);
+    }
+
+    /** 供应链仓单死信队列 */
+    @Bean
+    public Queue supplychainWbillDlq() {
+        return QueueBuilder.durable(QUEUE_SUPPLYCHAIN_WBILL_DLQ).build();
+    }
+
+    @Bean
+    public Binding supplychainWbillDeadBinding() {
+        return BindingBuilder.bind(supplychainWbillDlq())
+                .to(umsDlx())
+                .with(ROUTING_SUPPLYCHAIN_WBILL_DEAD);
     }
 }

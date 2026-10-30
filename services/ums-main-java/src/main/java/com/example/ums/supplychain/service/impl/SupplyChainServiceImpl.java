@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -29,6 +30,7 @@ import java.util.List;
 
 /** 供应链看板实现。 */
 @Service
+@RequiredArgsConstructor
 public class SupplyChainServiceImpl implements SupplyChainService {
 
     private static final Logger log = LoggerFactory.getLogger(SupplyChainServiceImpl.class);
@@ -39,20 +41,6 @@ public class SupplyChainServiceImpl implements SupplyChainService {
     private final TradeRecordMapper tradeRecordMapper;
     private final SupplierUpdateMapper supplierUpdateMapper;
     private final ObjectMapper objectMapper;
-
-    public SupplyChainServiceImpl(IndicatorSeriesMapper indicatorSeriesMapper,
-                                   IndicatorPointMapper indicatorPointMapper,
-                                   InventorySeriesMapper inventorySeriesMapper,
-                                   TradeRecordMapper tradeRecordMapper,
-                                   SupplierUpdateMapper supplierUpdateMapper,
-                                   ObjectMapper objectMapper) {
-        this.indicatorSeriesMapper = indicatorSeriesMapper;
-        this.indicatorPointMapper = indicatorPointMapper;
-        this.inventorySeriesMapper = inventorySeriesMapper;
-        this.tradeRecordMapper = tradeRecordMapper;
-        this.supplierUpdateMapper = supplierUpdateMapper;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public List<IndicatorSeriesDto> listMaterials() {
