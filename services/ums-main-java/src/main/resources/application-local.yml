@@ -28,7 +28,7 @@ ums:
     sso:
       enabled: false
       token-url: ""
-      userinfo-url: ""
+      logout-url: ""
       client-id: ""
       client-secret: ""
       callback-url: ""

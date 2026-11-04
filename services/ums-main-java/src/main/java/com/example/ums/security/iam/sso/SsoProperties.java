@@ -10,7 +10,7 @@ import java.util.List;
  * <p>接入流程参见《晶科能源IAM-OAuth2.0单点认证集成文档》：
  * <ol>
  *   <li>向 IAM 负责人申请 client_id / client_secret，订阅 JIP 网关的
- *       getToken / getUserInfo 接口（注意网关鉴权方式：HMAC / JWT / KeyAuth）</li>
+ *       getToken 接口（注意网关鉴权方式：HMAC / JWT / KeyAuth）</li>
  *   <li>晶彩后台配置出口 IP 白名单与接口权限，工作台地址填 IAM 授权链接</li>
  *   <li>本系统提供回调接口 /api/auth/sso/callback 接收授权码</li>
  * </ol>
@@ -29,10 +29,13 @@ public class SsoProperties {
     private String tokenUrl;
 
     /**
-     * IAM 获取登录用户信息端点（文档 2.3 节，必填）：
-     * token 响应不含用户字段，必须携带 access_token 调用本端点换取 uid。
+     * IAM 全局注销端点（文档 2.4 节，GET 浏览器重定向）：IAM 会注销全局登录会话。
+     * 本系统前端先清本地 JWT 再跳转本系统 /api/auth/sso/logout，由后端 302 到本端点
+     * 并携带 redirectUrl 回登录页。
+     * 测试环境 https://iamtest.jinkosolar.com/portal/sso/logout.html，
+     * 正式环境 https://iam.jinkosolar.com/portal/sso/logout.html；留空则直接回跳前端。
      */
-    private String userinfoUrl;
+    private String logoutUrl;
 
     /**
      * JIP 网关鉴权方式（《晶科能源JIP-接口鉴权说明》第 2 节）：
@@ -117,6 +120,9 @@ public class SsoProperties {
     public String getTokenUrl() { return tokenUrl; }
     public void setTokenUrl(String tokenUrl) { this.tokenUrl = tokenUrl; }
 
+    public String getLogoutUrl() { return logoutUrl; }
+    public void setLogoutUrl(String logoutUrl) { this.logoutUrl = logoutUrl; }
+
     public GatewayAuthMode getGatewayAuthMode() { return gatewayAuthMode; }
     public void setGatewayAuthMode(GatewayAuthMode gatewayAuthMode) { this.gatewayAuthMode = gatewayAuthMode; }
 
@@ -134,9 +140,6 @@ public class SsoProperties {
 
     public String getGatewayDateHeader() { return gatewayDateHeader; }
     public void setGatewayDateHeader(String gatewayDateHeader) { this.gatewayDateHeader = gatewayDateHeader; }
-
-    public String getUserinfoUrl() { return userinfoUrl; }
-    public void setUserinfoUrl(String userinfoUrl) { this.userinfoUrl = userinfoUrl; }
 
     public String getClientId() { return clientId; }
     public void setClientId(String clientId) { this.clientId = clientId; }

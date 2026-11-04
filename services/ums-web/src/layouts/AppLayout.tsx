@@ -20,6 +20,22 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const isAdmin = user?.roles.includes('ADMIN') ?? false;
 
+  /**
+   * 退出登录：先清本地 JWT（业务系统会话，IAM 文档 2.4 要求先注销本地会话），
+   * LOCAL 用户直接回登录页；IAM/SSO 用户再整页跳转后端 /api/auth/sso/logout，
+   * 由后端 302 到 IAM 全局注销端点（logout.html?redirectUrl=登录页）注销晶彩全局会话。
+   */
+  const handleLogout = () => {
+    logout();
+    if (user?.provider === 'LOCAL') {
+      navigate('/login');
+      return;
+    }
+    window.location.href =
+      '/api/auth/sso/logout?redirect=' +
+      encodeURIComponent(window.location.origin + '/login');
+  };
+
   return (
     <>
       {/* 顶栏 */}
@@ -53,28 +69,21 @@ export function AppLayout() {
             options={[{ value: 'zh-CN', label: '简体中文' }]}
             aria-label="界面语言"
           />
-          {/* 单点登录会话不提供退出入口（文档 5.3：晶彩容器内退出会导致会话异常/死循环），
-              仅本地 LOCAL 开发模式保留 */}
-          {user?.provider === 'LOCAL' && (
-            <span
-              className="logout"
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                logout();
-                navigate('/login');
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  logout();
-                  navigate('/login');
-                }
-              }}
-            >
-              ⏻ 退出
-            </span>
-          )}
+          {/* 退出入口：LOCAL 用户回登录页；IAM/SSO 用户经后端跳转 IAM 全局注销（文档 2.4） */}
+          <span
+            className="logout"
+            role="button"
+            tabIndex={0}
+            onClick={handleLogout}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleLogout();
+              }
+            }}
+          >
+            ⏻ 退出
+          </span>
         </div>
       </nav>
 

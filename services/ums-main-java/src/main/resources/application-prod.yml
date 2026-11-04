@@ -30,7 +30,7 @@ ums:
     sso:
       enabled: ${UMS_SSO_ENABLED:false}
       token-url: ${UMS_SSO_TOKEN_URL:}
-      userinfo-url: ${UMS_SSO_USERINFO_URL:}
+      logout-url: ${UMS_SSO_LOGOUT_URL:}
       client-id: ${UMS_SSO_CLIENT_ID:}
       client-secret: ${UMS_SSO_CLIENT_SECRET:}
       callback-url: ${UMS_SSO_CALLBACK_URL:}

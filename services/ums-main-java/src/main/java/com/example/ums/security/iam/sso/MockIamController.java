@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 本地/测试环境 Mock IAM：模拟晶彩单点登录的授权、token、userinfo 三个端点，
+ * 本地/测试环境 Mock IAM：模拟晶彩单点登录的授权、token 两个端点，
  * 用于在无真实 IAM 凭证时调试 SSO 全链路代码。
  * 真实 IAM 静默授权（依赖晶彩 Cookie）只有正式环境能联调，见文档 6.1 节。
  *
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   ?client_id=mock-client
  *   &response_type=code
  *   &redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapi%2Fauth%2Fsso%2Fcallback
- * → 302 回调（带 code）→ 换 token → 拉用户 → 前端落地页 → 进入首页
+ * → 302 回调（带 code）→ 换 token（即登录成功）→ 前端落地页 → 进入首页
  * </pre>
  *
  * <p>
@@ -48,7 +48,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>
  * UMS_SECURITY_SSO_ENABLED=true
  * UMS_SECURITY_SSO_TOKENURL=http://localhost:8080/api/mock-iam/token
- * UMS_SECURITY_SSO_USERINFOURL=http://localhost:8080/api/mock-iam/userinfo
  * UMS_SECURITY_SSO_CLIENTID=mock-client
  * UMS_SECURITY_SSO_CLIENTSECRET=mock-secret
  * UMS_SECURITY_SSO_CALLBACKURL=http://localhost:8080/api/auth/sso/callback
@@ -62,8 +61,6 @@ public class MockIamController {
 
     /** code → "externalId|displayName"（授权码一次性使用） */
     private final Map<String, String> grants = new ConcurrentHashMap<>();
-    /** access_token → "externalId|displayName" */
-    private final Map<String, String> tokens = new ConcurrentHashMap<>();
 
     /** 模拟 IAM 授权端点：静默"授权"成功，直接下发 code 并 302 到 redirect_uri */
     @GetMapping("/authorize")
@@ -108,34 +105,9 @@ public class MockIamController {
             return ResponseEntity.badRequest().body(Map.of("error", "invalid_grant"));
         }
         String accessToken = UUID.randomUUID().toString();
-        tokens.put(accessToken, identity);
         return ResponseEntity.ok(Map.of(
                 "access_token", accessToken,
                 "token_type", "bearer",
                 "expires_in", 1800));
-    }
-
-    /**
-     * 模拟 userinfo 端点（文档 2.3 节）：POST 表单携带 access_token，
-     * 响应结构对齐文档示例 {"ret":0,"msg":"","uid":...} 并附带常用用户字段。
-     */
-    @PostMapping(value = "/userinfo", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Map<String, Object>> userinfo(
-            @RequestParam(value = "access_token", required = false) String accessToken) {
-        String identity = accessToken != null ? tokens.get(accessToken) : null;
-        if (identity == null) {
-            return ResponseEntity.status(401).body(Map.of("ret", -1, "msg", "invalid_token"));
-        }
-        String[] parts = identity.split("\\|", 2);
-        String externalId = parts[0];
-        String display = parts.length > 1 ? parts[1] : externalId;
-        Map<String, Object> body = new java.util.LinkedHashMap<>();
-        body.put("ret", 0);
-        body.put("msg", "");
-        body.put("uid", externalId);
-        body.put("username", externalId.toLowerCase());
-        body.put("displayName", display);
-        body.put("email", externalId.toLowerCase() + "@mock.jinkosolar.com");
-        return ResponseEntity.ok(body);
     }
 }

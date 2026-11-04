@@ -38,7 +38,7 @@ ums:
     # ---------- 晶彩单点登录（IAM OAuth 2.0 授权码模式 · JIP 测试环境） ----------
     # 凭证来源：JIP 测试租户 APP189；接口以《晶科能源IAM-OAuth2.0单点认证集成文档》为准
     #   getCode（浏览器跳转拿授权码）：登录页"IAM 账号登录"按钮直连，前端常量配置
-    #   getToken / getUserInfo（后端调用）：下方 token-url / userinfo-url
+    #   getToken（后端调用）：下方 token-url；getUserInfo 已下线（2026-11，token 成功即登录）
     #   callback-url：77 服务器回调；若 IAM 校验回调白名单，
     #     需让 IAM 负责人（石正浩）把该地址加进 APP189 的回调登记
     sso:
@@ -48,13 +48,14 @@ ums:
       authorize-url: "https://jiptest.jinkosolar.com/JIP/IAM/IAM4_OAuth_getCode/1.0.0"
       # token 端点（JIP 网关 IAM4_OAuth_getToken）：POST 表单 code 换 access_token（文档 2.2 节）
       token-url: "https://jiptest.jinkosolar.com/JIP/IAM/IAM4_OAuth_getToken/1.0.0"
-      # userinfo 端点（JIP 网关 IAM4_OAuth_getUserInfo_header1）：必填！
-      # token 响应不含用户字段，必须 POST 表单 access_token 换 uid（文档 2.3 节）
-      userinfo-url: "https://jiptest.jinkosolar.com/JIP/IAM/IAM4_Oauth_getUserInfo_header1/1.0.0"
+      # IAM 全局注销端点（文档 2.4 节）：前端清本地会话后 302 到本系统
+      # /api/auth/sso/logout，由后端 302 到此地址并携带 redirectUrl 回登录页；
+      # 正式环境换 https://iam.jinkosolar.com/portal/sso/logout.html
+      logout-url: "https://iamtest.jinkosolar.com/portal/sso/logout.html"
       client-id: "APP189"
       client-secret: "ea5a6708-8669-4c1d-860d-449b4068"   # 测试凭证，仅 dev 环境使用
       callback-url: "http://10.21.13.77/api/auth/sso/callback"
-      frontend-landing-url: http://10.21.13.77/sso/landing
+      frontend-landing-url: "http://10.21.13.77/sso/landing"
       # JIP 网关鉴权（《晶科能源JIP-接口鉴权说明》第 2 节）：
       #   NONE —— 静态透传 gateway-authorization（KeyAuth-Header 方式，
       #           或 KeyAuth-Params 把 Key 直接拼进上面两个 URL；手工验证 HMAC 也走这里）

@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
  *
  * <p>
  * 链路：晶彩工作台/消息卡片 → IAM 授权端点（静默下发 code）→ 302 回本接口 →
- * 换取用户信息并签发本系统 JWT → 302 跳转前端落地页 /sso/landing?token=...。
+ * 换取 access_token 即登录成功，签发本系统 JWT → 302 跳转前端落地页 /sso/landing?token=...。
  *
  * <p>
  * 错误一律 302 到落地页并携带 error 参数（浏览器跳转流程中直接返回 JSON
@@ -57,6 +57,37 @@ public class SsoAuthController {
 
     private String orEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    /**
+     * 注销登录（IAM 文档 2.4 节，GET 浏览器重定向方式）。
+     * 本系统会话是前端 localStorage 中的 JWT（无状态），前端已先清本地登录态再跳入本接口；
+     * 这里 302 到 IAM 全局注销端点（logout.html）并携带 redirectUrl，
+     * IAM 注销全局登录会话后回跳登录页重新认证。
+     * 未配置 logout-url（本地开发）时直接 302 回前端地址。
+     *
+     * @param redirect 注销后回跳的前端页面（一般传登录页绝对地址），缺省用落地页配置
+     */
+    @GetMapping("/logout")
+    public void logout(@RequestParam(required = false) String redirect,
+            HttpServletResponse response) throws IOException {
+        String back = (redirect != null && !redirect.isBlank())
+                ? redirect
+                : ssoProperties.getFrontendLandingUrl();
+        if (back == null || back.isBlank()) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "SSO 注销缺少回跳地址（请由前端携带 redirect 参数）");
+            return;
+        }
+        String logoutUrl = ssoProperties.getLogoutUrl();
+        if (logoutUrl == null || logoutUrl.isBlank()) {
+            // 未配置 IAM 全局注销端点（本地开发）：本地会话已清，直接回前端
+            response.sendRedirect(back);
+            return;
+        }
+        log.info("SSO 注销: 302 → {}, redirectUrl={}", logoutUrl, back);
+        response.sendRedirect(logoutUrl + "?redirectUrl="
+                + URLEncoder.encode(back, StandardCharsets.UTF_8));
     }
 
     /**
