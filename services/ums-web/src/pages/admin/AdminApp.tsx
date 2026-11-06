@@ -6,6 +6,7 @@ import { UsersPage } from './UsersPage';
 import { PushPage } from './PushPage';
 import { AuditLogsPage } from './AuditLogsPage';
 import { DlqPage } from './DlqPage';
+import { XxlJobsPage } from './XxlJobsPage';
 
 /** 管理后台二级应用（懒加载入口在 App.tsx），普通用户不加载此 chunk */
 export default function AdminApp() {
@@ -15,6 +16,7 @@ export default function AdminApp() {
         <Route index element={<Navigate to="sources" replace />} />
         <Route path="sources" element={<SourcesPage />} />
         <Route path="tasks" element={<TasksPage />} />
+        <Route path="xxl-jobs" element={<XxlJobsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="push" element={<PushPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />

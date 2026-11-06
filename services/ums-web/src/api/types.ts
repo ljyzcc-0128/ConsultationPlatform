@@ -95,6 +95,11 @@ export interface DlqMessage {
   payload: string;
   routingKey: string;
   redelivered: boolean;
+  exchange: string;
+  /** AMQP 消息属性（message_id/timestamp/content_type/priority 等） */
+  properties: Record<string, unknown>;
+  /** 自定义消息头（properties.headers） */
+  headers: Record<string, unknown>;
 }
 
 /** 分类字典（12 个） */
@@ -365,4 +370,47 @@ export interface SourceCreateBody {
   dateFilter?: boolean;
   category?: string;
   remark?: string;
+}
+
+// ---------- XXL-JOB 定时任务（管理后台维护列表） ----------
+
+export interface XxlJobInfo {
+  id: number;
+  jobGroup: number;
+  jobDesc: string;
+  scheduleType: string;
+  scheduleConf: string;
+  executorRouteStrategy: string;
+  executorHandler: string;
+  executorParam: string;
+  misfireStrategy: string;
+  executorBlockStrategy: string;
+  author: string;
+  alarmEmail: string;
+  /** 0 停止 / 1 运行 */
+  triggerStatus: number;
+  /** 毫秒时间戳，0 表示从未触发/未排程 */
+  triggerLastTime: number;
+  triggerNextTime: number;
+  createTime: number;
+  updateTime: number;
+}
+
+export interface XxlJobPage {
+  total: number;
+  list: XxlJobInfo[];
+}
+
+/** 任务新增/编辑请求体（未填字段由后端给调度中心默认值） */
+export interface XxlJobUpsertBody {
+  jobDesc: string;
+  scheduleType: string;
+  scheduleConf: string;
+  executorHandler: string;
+  executorParam?: string;
+  author?: string;
+  alarmEmail?: string;
+  misfireStrategy?: string;
+  executorRouteStrategy?: string;
+  executorBlockStrategy?: string;
 }

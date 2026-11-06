@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   DatabaseOutlined,
   ScheduleOutlined,
+  ClockCircleOutlined,
   TeamOutlined,
   NotificationOutlined,
   FileSearchOutlined,
@@ -12,6 +13,7 @@ import {
 const MENU_ITEMS = [
   { key: 'sources', icon: <DatabaseOutlined />, label: '信源管理' },
   { key: 'tasks', icon: <ScheduleOutlined />, label: '采集任务' },
+  { key: 'xxl-jobs', icon: <ClockCircleOutlined />, label: '定时任务' },
   { key: 'users', icon: <TeamOutlined />, label: '用户与权限' },
   { key: 'push', icon: <NotificationOutlined />, label: '推送管理' },
   { key: 'audit-logs', icon: <FileSearchOutlined />, label: '审计日志' },

@@ -30,12 +30,20 @@ ums:
     sso:
       enabled: ${UMS_SSO_ENABLED:false}
       token-url: ${UMS_SSO_TOKEN_URL:}
+      # 用户信息端点（文档 2.3 节，POST 表单 access_token 换 uid，网关鉴权方式见下方）
+      userinfo-url: ${UMS_SSO_USERINFO_URL:}
       logout-url: ${UMS_SSO_LOGOUT_URL:}
       client-id: ${UMS_SSO_CLIENT_ID:}
       client-secret: ${UMS_SSO_CLIENT_SECRET:}
       callback-url: ${UMS_SSO_CALLBACK_URL:}
       # 换 token 凭证传递方式：FORM（表单，默认）/ BASIC（Authorization 头），按 IAM 文档选择
       token-auth-mode: ${UMS_SSO_TOKEN_AUTH_MODE:FORM}
+      # JIP 网关鉴权：NONE 静态透传 / JWT 动态网关 JWT（文档 2.3 方案二，见 SsoProperties 注释）
+      gateway-auth-mode: ${UMS_SSO_GATEWAY_AUTH_MODE:NONE}
+      gateway-username: ${UMS_SECURITY_SSO_GATEWAYUSERNAME:}
+      gateway-secret: ${UMS_SECURITY_SSO_GATEWAYSECRET:}
+      gateway-authorization: ${UMS_SECURITY_SSO_GATEWAYAUTHORIZATION:}
+      gateway-date-header: ${UMS_SECURITY_SSO_GATEWAYDATEHEADER:}
       frontend-landing-url: ${UMS_SSO_LANDING_URL:}
 
   admin:

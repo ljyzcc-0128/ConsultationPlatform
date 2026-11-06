@@ -28,6 +28,7 @@ ums:
     sso:
       enabled: false
       token-url: ""
+      userinfo-url: ""
       logout-url: ""
       client-id: ""
       client-secret: ""
@@ -54,7 +55,7 @@ ums:
     card-link: ""
 
   xxl-job:
-    enabled: false
+    enabled: true
     admin-addresses: http://127.0.0.1:8081/xxl-job-admin
     access-token: default_token
 

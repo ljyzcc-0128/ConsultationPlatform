@@ -68,6 +68,10 @@ ums:
     enabled: false
     appname: ums-main-executor
     port: 9999
+    # 调度中心管理接口（管理后台定时任务维护列表用），账号密码与 xxl-job-admin 一致
+    admin-addresses: ${UMS_XXL_ADMIN:}
+    username: ${UMS_XXL_USER:admin}
+    password: ${UMS_XXL_PASSWORD:123456}
 
 logging:
   level:
