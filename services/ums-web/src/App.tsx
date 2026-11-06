@@ -9,6 +9,7 @@ import { ContentDetailPage } from './pages/center/ContentDetailPage';
 import { SupplyChainPage } from './pages/supplychain/SupplyChainPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SsoLandingPage } from './pages/auth/SsoLandingPage';
+import { ProfilePage } from './pages/profile/ProfilePage';
 import { EmptyState } from './components/EmptyState';
 import { AdminRoute } from './components/AdminRoute';
 import { useAuth } from './auth/AuthContext';
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/center" element={<CenterPage />} />
         <Route path="/center/:contentId" element={<ContentDetailPage />} />
         <Route path="/supply-chain" element={<SupplyChainPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/403" element={<ForbiddenPage />} />
         <Route
           path="/admin/*"

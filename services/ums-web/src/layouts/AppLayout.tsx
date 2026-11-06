@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Select } from 'antd';
+import { Avatar, Dropdown } from 'antd';
+import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../theme/ThemeProvider';
 import { QaRobot } from '../components/QaRobot';
@@ -60,30 +61,32 @@ export function AppLayout() {
           >
             切换：{theme === 'cool' ? '亮色版' : '暗色版'}
           </button>
-          <span>{user?.displayName ?? user?.username}</span>
-          <Select
-            size="small"
-            variant="borderless"
-            style={{ width: 130 }}
-            defaultValue="zh-CN"
-            options={[{ value: 'zh-CN', label: '简体中文' }]}
-            aria-label="界面语言"
-          />
-          {/* 退出入口：LOCAL 用户回登录页；IAM/SSO 用户经后端跳转 IAM 全局注销（文档 2.4） */}
-          <span
-            className="logout"
-            role="button"
-            tabIndex={0}
-            onClick={handleLogout}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleLogout();
-              }
+          {/* 右上角头像下拉：个人中心 / 退出登录 */}
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: [
+                { key: 'profile', icon: <UserOutlined />, label: '个人中心' },
+                { type: 'divider' },
+                { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
+              ],
+              onClick: ({ key }) => {
+                if (key === 'profile') {
+                  navigate('/profile');
+                } else if (key === 'logout') {
+                  handleLogout();
+                }
+              },
             }}
           >
-            ⏻ 退出
-          </span>
+            <Avatar
+              style={{ backgroundColor: '#2e7d32', cursor: 'pointer' }}
+              aria-label="用户菜单"
+            >
+              {(user?.displayName || user?.username || '用').slice(0, 1)}
+            </Avatar>
+          </Dropdown>
         </div>
       </nav>
 
