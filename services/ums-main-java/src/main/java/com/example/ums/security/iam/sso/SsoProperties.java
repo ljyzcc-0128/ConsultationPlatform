@@ -29,6 +29,13 @@ public class SsoProperties {
     private String tokenUrl;
 
     /**
+     * IAM 获取登录用户信息端点（POST 表单 access_token 换 uid，见文档 2.3 节）。
+     * token 响应不含用户字段，必须调本接口；接口编码随 JIP 网关鉴权方式而变
+     * （IAM4_OAuth_getUserInfo_XXX，XXX = HMAC / JWT / KeyAuth，以平台实际订阅为准）。
+     */
+    private String userinfoUrl;
+
+    /**
      * IAM 全局注销端点（文档 2.4 节，GET 浏览器重定向）：IAM 会注销全局登录会话。
      * 本系统前端先清本地 JWT 再跳转本系统 /api/auth/sso/logout，由后端 302 到本端点
      * 并携带 redirectUrl 回登录页。
@@ -119,6 +126,9 @@ public class SsoProperties {
 
     public String getTokenUrl() { return tokenUrl; }
     public void setTokenUrl(String tokenUrl) { this.tokenUrl = tokenUrl; }
+
+    public String getUserinfoUrl() { return userinfoUrl; }
+    public void setUserinfoUrl(String userinfoUrl) { this.userinfoUrl = userinfoUrl; }
 
     public String getLogoutUrl() { return logoutUrl; }
     public void setLogoutUrl(String logoutUrl) { this.logoutUrl = logoutUrl; }

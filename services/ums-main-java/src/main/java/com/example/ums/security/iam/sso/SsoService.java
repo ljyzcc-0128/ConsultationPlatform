@@ -33,12 +33,17 @@ import java.util.List;
  *     重定向回 /api/auth/sso/callback（文档 2.1 节）</li>
  * <li>本类 POST token_url，表单携带 code + client_id + client_secret + grant_type
  *     + redirect_uri 换 access_token（文档 2.2 节，凭证放表单，网关鉴权头可选透传）</li>
- * <li>拿到 access_token 即视为登录成功（2026-11 联调决定：JIP 的 getUserInfo 端点
- *     需要 KeyAuth 鉴权 Key 暂未提供，用户信息回查下线；待办链接携带 target_user_id
- *     时以其为账户标识，否则落共享联调账号 iam_sso_user）</li>
- * <li>查/建本地 cp_user（首次登录默认普通用户 USER 角色），
+ * <li>POST userinfo_url，表单携带 access_token 换登录用户信息 uid（文档 2.3 节，
+ *     token 响应不含用户字段，必须调本接口）；JIP 网关鉴权采用方案二 JWT：
+ *     每次请求动态生成网关 JWT 放 Authorization: Bearer 头（鉴权说明 2.2 节）</li>
+ * <li>（防越权）如回调携带 target_user_id，必须与 IAM 返回身份一致，否则拒绝</li>
+ * <li>查/建本地 cp_user（首次登录默认普通用户 USER 角色，保存用户信息），
  *     返回 UserPrincipal，由 Controller 签发本系统 JWT</li>
  * </ol>
+ *
+ * <p>
+ * 用户信息字段 IAM 可按需配置，字段提取按优先级兼容常见命名（uid 优先）；
+ * 联调时若字段对不上，参考《IAM对接问题处理》核对 IAM 后台配置。
  */
 @Service
 @EnableConfigurationProperties(SsoProperties.class)
@@ -59,10 +64,10 @@ public class SsoService {
             .build();
 
     /**
-     * 单点登录主流程：授权码 → access_token（即登录成功）→ 本地账户。
+     * 单点登录主流程：授权码 → access_token → 用户信息（网关 JWT 鉴权）→ 本地账户。
      *
      * @param code         IAM 重定向回的授权码
-     * @param targetUserId 待办/消息链接携带的目标用户标识，可为空；非空时作为登录账户标识
+     * @param targetUserId 待办/消息链接携带的目标用户标识，可为空；非空时必须与 IAM 身份一致
      */
     public UserPrincipal ssoLogin(String code, String targetUserId) {
         if (!props.isEnabled()) {
@@ -75,6 +80,8 @@ public class SsoService {
         requireConfigured(props.getClientId(), "ums.security.sso.client-id / UMS_SECURITY_SSO_CLIENTID");
         requireConfigured(props.getClientSecret(), "ums.security.sso.client-secret / UMS_SECURITY_SSO_CLIENTSECRET");
         requireConfigured(props.getCallbackUrl(), "ums.security.sso.callback-url / UMS_SECURITY_SSO_CALLBACKURL");
+        // 文档 2.2.4：token 响应不含用户字段，必须调 getUserInfo 才能拿到 uid
+        requireConfigured(props.getUserinfoUrl(), "ums.security.sso.userinfo-url / UMS_SECURITY_SSO_USERINFOURL");
 
         // 1. 授权码换 access_token（文档 2.2 节）
         JsonNode tokenResp = exchangeForAccessToken(code);
@@ -88,21 +95,53 @@ public class SsoService {
                 extractField(tokenResp, "expires_in", "expiresIn"),
                 brief(accessToken));
 
-        // 2. 拿到 access_token 即视为登录成功（getUserInfo 已下线，token 响应不含用户字段；
-        //    待办/消息链接携带的 target_user_id 即 IAM 用户标识，缺省落共享联调账号）
-        boolean hasTarget = targetUserId != null && !targetUserId.isBlank();
-        String externalId = hasTarget ? targetUserId : "iam_sso_user";
-        String displayName = hasTarget ? targetUserId : "IAM 用户";
-        log.info("SSO token 获取成功即登录成功: externalId={}", externalId);
+        // 2. 携带 access_token 调 getUserInfo 换登录用户信息（文档 2.3 节，uid 即登录账号）
+        JsonNode info = fetchUserinfo(accessToken);
+        log.info("用户信息 getUserInfo={}：" , info);
 
-        // 3. 查/建本地账户 + 状态检查
-        CpUser user = userStore.findOrCreate(externalId, externalId, displayName, null,
-                List.of(), props.isAutoProvision(), props.getDefaultRoles());
+        String externalId = extractField(info, "uid", "externalId", "user_id", "userId",
+                "sub", "employeeId", "id");
+        String username = extractField(info, "username", "user_name", "login", "account");
+        String displayName = extractField(info, "displayName", "name", "realName", "cn");
+        String email = extractField(info, "email", "mail");
+        List<String> roles = extractRoles(info);
+
+        if (externalId == null || externalId.isBlank()) {
+            externalId = username;
+        }
+        if (externalId == null || externalId.isBlank()) {
+            log.error("IAM userinfo 未返回用户唯一标识: {}", safeBrief(info));
+            throw new BadCredentialsException("IAM 未返回用户唯一标识，无法完成登录");
+        }
+        if (username == null || username.isBlank()) {
+            username = externalId;
+        }
+        // 打印提取到的用户字段（脱敏）与 userinfo 原始字段名，便于联调核对 IAM 配置
+        log.info("SSO 用户信息提取: externalId={}, username={}, displayName={}, email={}, roles={}, userinfo字段={}",
+                externalId, username, displayName, email, roles, safeBrief(info));
+
+        // 3. 一致性校验（防越权）：从晶彩待办/消息通知跳入时，链接携带的
+        // target_user_id 必须与 IAM 返回身份一致，不一致即拒绝访问
+        if (targetUserId != null && !targetUserId.isBlank()) {
+            boolean match = targetUserId.equals(externalId)
+                    || targetUserId.equals(username)
+                    || (email != null && targetUserId.equalsIgnoreCase(email));
+            if (!match) {
+                log.warn("SSO 用户一致性校验失败: target_user_id={} iam_identity={}",
+                        targetUserId, externalId);
+                throw new BadCredentialsException("用户身份不一致，拒绝访问");
+            }
+        }
+
+        // 4. 查/建本地账户 + 状态检查
+        CpUser user = userStore.findOrCreate(externalId, username, displayName, email, roles,
+                props.isAutoProvision(), props.getDefaultRoles());
         if (!"ACTIVE".equals(user.getStatus())) {
             throw new BadCredentialsException("用户已禁用");
         }
 
         log.info("SSO login success: externalId={} username={}", externalId, user.getUsername());
+
         return new UserPrincipal(
                 user.getUserId(),
                 user.getUsername(),
@@ -132,7 +171,8 @@ public class SsoService {
     /**
      * 步骤 1：POST token_url 换 access_token（文档 2.2 节）。
      * 表单固定携带 grant_type / code / redirect_uri / client_id / client_secret
-     * （文档要求凭证放表单，无 BASIC 头方式）；JIP 网关鉴权头按配置可选透传。
+     * （文档要求凭证放表单，无 BASIC 头方式）；token 端点（路由无鉴权后缀）联调验证
+     * 无需网关鉴权头，且 OAuth 端点可能把 Authorization 误读为 Basic 认证，故不带。
      */
     private JsonNode exchangeForAccessToken(String code) {
         String form = new StringBuilder("grant_type=authorization_code")
@@ -144,18 +184,39 @@ public class SsoService {
 
         log.info("SSO token 端点请求: url={}, form={}", props.getTokenUrl(), maskForm(form));
 
-        HttpRequest.Builder rb = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(props.getTokenUrl()))
                 .timeout(Duration.ofSeconds(props.getTimeoutSeconds()))
                 .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Accept", "application/json");
-        applyGatewayAuth(rb, "token 端点");
-
-        HttpRequest request = rb
+                .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
                 .build();
 
         return executeForJson(request, "token 端点");
+    }
+
+    /**
+     * 步骤 2：POST userinfo_url 换登录用户信息（文档 2.3 节，方案二 JWT 网关鉴权）。
+     * 调用方式为 POST + application/x-www-form-urlencoded，access_token 放表单；
+     * JIP 网关 JWT 每次动态生成放 Authorization: Bearer 头（鉴权说明 2.2 节）。
+     */
+    private JsonNode fetchUserinfo(String accessToken) {
+        String form = "access_token=" + urlEncode(accessToken);
+
+        log.info("SSO userinfo 端点请求: url={}, form=access_token={}",
+                props.getUserinfoUrl(), brief(accessToken));
+
+        HttpRequest.Builder rb = HttpRequest.newBuilder()
+                .uri(URI.create(props.getUserinfoUrl()))
+                .timeout(Duration.ofSeconds(props.getTimeoutSeconds()))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept", "application/json");
+        applyGatewayAuth(rb, "userinfo 端点");
+
+        HttpRequest request = rb
+                .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
+                .build();
+        return executeForJson(request, "userinfo 端点");
     }
 
     /**
@@ -195,7 +256,7 @@ public class SsoService {
      * iss=租户 jwtKey，iat=当前时间，nbf=当前时间-5min，exp=当前时间+5min，HMAC256(secret)。
      * token 有效期仅 5 分钟且网关校验 nbf，故每次请求都重新生成，不做缓存。
      */
-    private String generateGatewayJwt() {
+    private String  generateGatewayJwt() {
         String jwtKey = props.getGatewayUsername();
         String secret = props.getGatewaySecret();
         if (jwtKey == null || jwtKey.isBlank() || secret == null || secret.isBlank()) {
@@ -225,10 +286,21 @@ public class SsoService {
                 throw new BadCredentialsException("IAM " + endpointName + " 调用失败: HTTP "
                         + response.statusCode());
             }
-            // 成功也打印完整返回报文（脱敏），联调时核对 IAM/网关实际响应结构
+            // 成功也打印完整返回报文（不脱敏，便于联调时直接复制核对 IAM/网关实际响应结构）
             log.info("SSO {} 响应: url={}, status={}, body={}",
-                    endpointName, url, response.statusCode(), maskSensitive(response.body()));
-            return objectMapper.readTree(response.body());
+                    endpointName, url, response.statusCode(), response.body());
+            // 兼容 {"code":0,"data":{...}} / {"result":{...}} 网关包装结构（文档裸响应为 {"ret":0,"uid":...}）
+            JsonNode json = objectMapper.readTree(response.body());
+            if (json.isObject()) {
+                for (String wrapper : List.of("data", "result")) {
+                    JsonNode inner = json.path(wrapper);
+                    if (inner.isObject() && hasAnyField(inner, "uid", "id", "sub", "userId", "user_id",
+                            "username", "employeeId", "externalId")) {
+                        return inner;
+                    }
+                }
+            }
+            return json;
         } catch (BadCredentialsException e) {
             throw e;
         } catch (Exception e) {
@@ -246,6 +318,31 @@ public class SsoService {
             }
         }
         return null;
+    }
+
+    private boolean hasAnyField(JsonNode json, String... fieldNames) {
+        for (String field : fieldNames) {
+            JsonNode node = json.path(field);
+            if (!node.isMissingNode() && !node.isNull() && !node.asText().isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 提取角色列表；无则返回空（由 IamUserStore 回退默认角色） */
+    private List<String> extractRoles(JsonNode json) {
+        JsonNode rolesNode = json.path("roles");
+        if (rolesNode.isArray() && rolesNode.size() > 0) {
+            try {
+                return objectMapper.treeToValue(rolesNode,
+                        new com.fasterxml.jackson.core.type.TypeReference<>() {
+                        });
+            } catch (Exception e) {
+                log.warn("解析 IAM roles 失败", e);
+            }
+        }
+        return List.of();
     }
 
     private String urlEncode(String value) {
@@ -272,16 +369,6 @@ public class SsoService {
         } catch (Exception e) {
             return "(unparseable)";
         }
-    }
-
-    /** 掩去 JSON 报文中 token/secret 类字段的值，仅保留前 6 位便于比对 */
-    private String maskSensitive(String body) {
-        if (body == null) {
-            return "";
-        }
-        return body.replaceAll(
-                "(\"(?:access_token|accessToken|client_secret|secret|token)\"\\s*:\\s*\")([^\"]{0,6})[^\"]*(\")",
-                "$1$2***$3");
     }
 
     /** 掩去表单串中 client_secret 的值 */

@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   ?client_id=mock-client
  *   &response_type=code
  *   &redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapi%2Fauth%2Fsso%2Fcallback
- * → 302 回调（带 code）→ 换 token（即登录成功）→ 前端落地页 → 进入首页
+ * → 302 回调（带 code）→ 换 token → userinfo（uid 即登录账号）→ 前端落地页 → 进入首页
  * </pre>
  *
  * <p>
@@ -61,6 +61,9 @@ public class MockIamController {
 
     /** code → "externalId|displayName"（授权码一次性使用） */
     private final Map<String, String> grants = new ConcurrentHashMap<>();
+
+    /** access_token → "externalId|displayName"（用户信息端点查询用，一次性） */
+    private final Map<String, String> tokens = new ConcurrentHashMap<>();
 
     /** 模拟 IAM 授权端点：静默"授权"成功，直接下发 code 并 302 到 redirect_uri */
     @GetMapping("/authorize")
@@ -105,9 +108,30 @@ public class MockIamController {
             return ResponseEntity.badRequest().body(Map.of("error", "invalid_grant"));
         }
         String accessToken = UUID.randomUUID().toString();
+        tokens.put(accessToken, identity);
         return ResponseEntity.ok(Map.of(
                 "access_token", accessToken,
                 "token_type", "bearer",
                 "expires_in", 1800));
+    }
+
+    /**
+     * 模拟用户信息端点（文档 2.3 节）：POST 表单 access_token 换登录用户信息。
+     * 返回结构与真实 IAM 一致（ret=0 + uid 等字段，字段命名按提取优先级兼容）。
+     */
+    @PostMapping(value = "/userinfo", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<Map<String, Object>> userinfo(@RequestParam String access_token) {
+        String identity = tokens.remove(access_token);
+        if (identity == null) {
+            return ResponseEntity.status(401).body(Map.of("ret", -1, "msg", "invalid access_token"));
+        }
+        String[] parts = identity.split("\\|", 2);
+        return ResponseEntity.ok(Map.of(
+                "ret", 0,
+                "uid", parts[0],
+                "log", parts[0],
+                "username", parts[0],
+                "displayName", parts.length > 1 ? parts[1] : parts[0],
+                "roles", java.util.List.of("USER")));
     }
 }
