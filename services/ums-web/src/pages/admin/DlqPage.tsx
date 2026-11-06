@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Card,
+  Descriptions,
   Drawer,
   Modal,
   Space,
@@ -18,6 +19,84 @@ import type { DlqMessage, DlqQueue } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { ListSkeleton } from '../../components/ListSkeleton';
+
+/** RabbitMQ properties.timestamp 为 epoch 秒 */
+function fmtTimestamp(v: unknown): string {
+  const n = typeof v === 'number' ? v : Number(v);
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  return new Date(n * 1000).toLocaleString();
+}
+
+/** properties 中值得逐条展示的字段（其余字段统一收进 JSON） */
+const PROPERTY_FIELDS: [string, string, (v: unknown) => string][] = [
+  ['message_id', '消息ID', (v) => String(v ?? '—')],
+  ['timestamp', '发布时间', fmtTimestamp],
+  ['content_type', '内容类型', (v) => String(v ?? '—')],
+  ['type', '类型', (v) => String(v ?? '—')],
+  ['correlation_id', '关联ID', (v) => String(v ?? '—')],
+  ['priority', '优先级', (v) => (v === undefined || v === 0 ? '0' : String(v))],
+  ['delivery_mode', '投递模式', (v) => (v === 2 ? '2（持久化）' : String(v ?? '—'))],
+  ['app_id', '应用', (v) => String(v ?? '—')],
+];
+
+function prettyJson(value: unknown): string {
+  if (value === undefined || value === null || (typeof value === 'object' && Object.keys(value as object).length === 0)) {
+    return '';
+  }
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+/** 单条死信消息详情：元信息 + 消息头 + 报文 */
+function MessageDetail({ msg }: { msg: DlqMessage }) {
+  const headersJson = prettyJson(msg.headers);
+  return (
+    <Card size="small">
+      <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <Descriptions
+          size="small"
+          column={2}
+          bordered
+          items={[
+            { key: 'exchange', label: '交换机', children: msg.exchange || '（默认）' },
+            { key: 'routing', label: 'Routing Key', children: <Tag color="blue">{msg.routingKey}</Tag> },
+            {
+              key: 'redelivered',
+              label: '曾重投',
+              children: msg.redelivered ? <Tag color="orange">是</Tag> : <Tag>否</Tag>,
+            },
+            ...PROPERTY_FIELDS.map(([key, label, fmt]) => ({
+              key,
+              label,
+              children: fmt(msg.properties?.[key]),
+            })),
+          ]}
+        />
+        {headersJson && (
+          <>
+            <Typography.Text type="secondary">消息头（headers）</Typography.Text>
+            <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+              {headersJson}
+            </pre>
+          </>
+        )}
+        <Typography.Text type="secondary">报文（payload）</Typography.Text>
+        <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+          {(() => {
+            try {
+              return JSON.stringify(JSON.parse(msg.payload), null, 2);
+            } catch {
+              return msg.payload;
+            }
+          })()}
+        </pre>
+      </Space>
+    </Card>
+  );
+}
 
 export function DlqPage() {
   const queryClient = useQueryClient();
@@ -143,27 +222,7 @@ export function DlqPage() {
           ) : (
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               {(messages.data ?? []).map((msg, i) => (
-                <Card key={i} size="small">
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    <Space size={8}>
-                      <Tag color="blue">{msg.routingKey}</Tag>
-                      {msg.redelivered && <Tag color="orange">曾重投</Tag>}
-                    </Space>
-                    <Typography.Paragraph
-                      style={{ fontSize: 12, marginBottom: 0, wordBreak: 'break-all' }}
-                    >
-                      <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                        {(() => {
-                          try {
-                            return JSON.stringify(JSON.parse(msg.payload), null, 2);
-                          } catch {
-                            return msg.payload;
-                          }
-                        })()}
-                      </pre>
-                    </Typography.Paragraph>
-                  </Space>
-                </Card>
+                <MessageDetail key={i} msg={msg} />
               ))}
               {(messages.data ?? []).length === 0 && (
                 <EmptyState title="没有消息" description="该队列当前没有死信消息。" />

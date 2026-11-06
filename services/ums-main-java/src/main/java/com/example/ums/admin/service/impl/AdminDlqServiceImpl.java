@@ -42,10 +42,13 @@ public class AdminDlqServiceImpl implements AdminDlqService {
     private final RestClient restClient = RestClient.create();
 
     public AdminDlqServiceImpl(RabbitTemplate rabbitTemplate,
-            @Value("${ums.mgmt.base-url:http://127.0.0.1:15672}") String mgmtBaseUrl,
-            @Value("${ums.mgmt.user:ums_admin}") String mgmtUser,
+            @Value("${ums.mgmt.base-url:}") String mgmtBaseUrl,
+            @Value("${ums.mgmt.user:}") String mgmtUser,
             @Value("${ums.mgmt.password:}") String mgmtPassword) {
         this.rabbitTemplate = rabbitTemplate;
+        if (mgmtBaseUrl == null || mgmtBaseUrl.isBlank()) {
+            throw new IllegalStateException("未配置 RabbitMQ 管理接口地址（ums.mgmt.base-url），无法使用死信队列功能");
+        }
         this.mgmtBaseUrl = mgmtBaseUrl;
         this.mgmtUser = mgmtUser;
         this.mgmtPassword = mgmtPassword;
@@ -87,8 +90,21 @@ public class AdminDlqServiceImpl implements AdminDlqService {
                 .map(m -> new DlqMessageView(
                         String.valueOf(m.get("payload")),
                         String.valueOf(m.get("routing_key")),
-                        Boolean.TRUE.equals(m.get("redelivered"))))
+                        Boolean.TRUE.equals(m.get("redelivered")),
+                        String.valueOf(m.get("exchange")),
+                        asMap(m.get("properties")),
+                        asMap(m.get("properties") instanceof Map<?, ?> p ? p.get("headers") : null)))
                 .toList();
+    }
+
+    /** Management API 字段 → Map（缺失/非 Map 返回空 Map） */
+    private Map<String, Object> asMap(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> result = new java.util.LinkedHashMap<>();
+            map.forEach((k, v) -> result.put(String.valueOf(k), v));
+            return result;
+        }
+        return Map.of();
     }
 
     @Override
