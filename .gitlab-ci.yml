@@ -133,7 +133,8 @@ deploy:dev:
       when: manual
   script:
     # 传输制品并按 systemd 重启（占位脚本，按《储能资讯平台部署运维文档》细化）
-    - echo "TODO: scp jar/dist 到目标机并 systemctl restart ums-main / 替换 nginx dist"
-    - test -n "$DEPLOY_SSH_HOST" || (echo "未配置 DEPLOY_SSH_HOST，跳过"; exit 0)
+    # 注意：整行加单引号——YAML 未引号标量含"冒号+空格"会被误解析为映射（此前流水线 yaml无效 的根因）
+    - 'echo "TODO: scp jar/dist 到目标机并 systemctl restart ums-main / 替换 nginx dist"'
+    - 'test -n "$DEPLOY_SSH_HOST" || (echo "未配置 DEPLOY_SSH_HOST，跳过"; exit 0)'
   environment:
     name: dev
