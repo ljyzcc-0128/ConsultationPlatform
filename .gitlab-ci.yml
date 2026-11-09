@@ -138,11 +138,14 @@ ai:review:
 
 # ---------- 部署（手动，方案A：部署服务器本地 runner） ----------
 # 前提：部署服务器上装有 gitlab-runner，注册时 tag 为 "deploy"（shell executor、root 运行、开机自启）
-# 路径/端口均可通过项目 CI/CD Variables 覆盖（不配则用默认值）：
-#   DEPLOY_JAR_PATH     jar 落地路径        默认 /opt/ums/ums-main.jar
-#   DEPLOY_WEB_DIR      前端 dist 目录      默认 /opt/ums/web
-#   UMS_SERVICE_NAME    systemd 服务名      默认 ums-main
-#   DEPLOY_HEALTH_PORT  健康检查端口        默认 8080
+# 服务器实际路径（来自现网手工部署）：jar=/opt/ums/app  前端=/opt/ums/web  爬虫=/opt/ums/app/ums-crawler-py
+# 以下路径/端口均可通过项目 CI/CD Variables 覆盖（不配则用默认值）：
+#   DEPLOY_JAR_PATH       jar 落地路径（默认自动探测 /opt/ums/app 下已有 ums-main*.jar，无则用 ums-main.jar）
+#   DEPLOY_WEB_DIR        前端 dist 目录    默认 /opt/ums/web
+#   DEPLOY_CRAWLER_DIR    爬虫源码目录      默认 /opt/ums/app/ums-crawler-py
+#   UMS_SERVICE_NAME      java systemd 服务名      默认 ums-main
+#   CRAWLER_SERVICE_NAME  爬虫 systemd 服务名      默认 ums-crawler
+#   DEPLOY_HEALTH_PORT    健康检查端口      默认 8080
 deploy:backend:
   stage: deploy
   tags: [deploy]
@@ -152,7 +155,9 @@ deploy:backend:
       when: manual
   script:
     - 'JAR=$(ls services/ums-main-java/target/ums-main-*.jar | head -1); test -n "$JAR" || (echo "未找到 jar 产物"; exit 1)'
-    - 'install -D -m 644 "$JAR" "${DEPLOY_JAR_PATH:-/opt/ums/ums-main.jar}"'
+    # 落点：优先 CI 变量；否则探测服务器上已有 jar 的实际文件名（避免手工部署的 jar 名不同导致 service 指向失效）；都无则用 ums-main.jar
+    - 'TARGET="${DEPLOY_JAR_PATH:-$(ls /opt/ums/app/ums-main*.jar 2>/dev/null | head -1)}"; TARGET="${TARGET:-/opt/ums/app/ums-main.jar}"'
+    - 'install -D -m 644 "$JAR" "$TARGET" && echo "jar 已更新: $TARGET"'
     - 'systemctl restart "${UMS_SERVICE_NAME:-ums-main}"'
     - |
       echo "等待服务监听 ${DEPLOY_HEALTH_PORT:-8080} ..."
@@ -179,3 +184,17 @@ deploy:web:
     - 'echo "前端已发布到 ${DEPLOY_WEB_DIR:-/opt/ums/web}（静态文件无需重启 nginx）"'
   environment:
     name: dev
+
+deploy:crawler:
+  stage: deploy
+  tags: [deploy]
+  needs: ["crawler:test"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+  script:
+    - 'D="${DEPLOY_CRAWLER_DIR:-/opt/ums/app/ums-crawler-py}"'
+    - 'mkdir -p "$D"'
+    - 'rsync -a --delete --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude ".pytest_cache" --exclude "reports" services/ums-crawler-py/ "$D/"'
+    - 'cd "$D" && (test -d .venv && .venv/bin/pip install -q -r requirements.txt || pip3 install -q -r requirements.txt) && echo "依赖已同步"'
+    - 'systemctl restart "${CRAWLER_SERVICE_NAME:-ums-crawler}" && echo "爬虫服务已重启"'
