@@ -12,6 +12,7 @@ workflow:
 stages:
   - build
   - test
+  - ai-review
   - package
   - deploy
 
@@ -121,6 +122,19 @@ crawler:test:
     expire_in: 1 week
   # 爬虫测试依赖外网数据源时可能不稳定：先不阻断流水线，稳定后移除
   allow_failure: true
+
+# ---------- AI 代码评审（MR 专用，只评论不阻断） ----------
+# 需在项目 CI/CD Variables 配置（Settings > CI/CD > Variables，均建议勾选 Masked）：
+#   GITLAB_REVIEW_TOKEN  : api scope 的 Personal Access Token（读 diff + 贴 MR 评论）
+#   UMS_LLM_BASE_URL / UMS_LLM_API_KEY / UMS_LLM_MODEL : LLM 接入（与后端应用同一套环境变量名）
+# 未配置时自动跳过，不影响流水线
+ai:review:
+  stage: ai-review
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  allow_failure: true
+  script:
+    - python3 scripts/ci/ai_review.py
 
 # ---------- 部署（手动） ----------
 # 前提：自建 GitLab Runner 部署在部署服务器（或可 SSH 到目标机的机器），
