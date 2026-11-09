@@ -136,19 +136,46 @@ ai:review:
   script:
     - python3 .gitlab/ci/ai_review.py
 
-# ---------- 部署（手动） ----------
-# 前提：自建 GitLab Runner 部署在部署服务器（或可 SSH 到目标机的机器），
-# CI/CD Variables 中配置 DEPLOY_SSH_HOST / DEPLOY_SSH_USER / DEPLOY_SSH_KEY（File 类型）
-deploy:dev:
+# ---------- 部署（手动，方案A：部署服务器本地 runner） ----------
+# 前提：部署服务器上装有 gitlab-runner，注册时 tag 为 "deploy"（shell executor、root 运行、开机自启）
+# 路径/端口均可通过项目 CI/CD Variables 覆盖（不配则用默认值）：
+#   DEPLOY_JAR_PATH     jar 落地路径        默认 /opt/ums/ums-main.jar
+#   DEPLOY_WEB_DIR      前端 dist 目录      默认 /opt/ums/web
+#   UMS_SERVICE_NAME    systemd 服务名      默认 ums-main
+#   DEPLOY_HEALTH_PORT  健康检查端口        默认 8080
+deploy:backend:
   stage: deploy
-  image: alpine:3.20
+  tags: [deploy]
+  needs: ["backend:package"]
   rules:
     - if: $CI_COMMIT_BRANCH == "dev"
       when: manual
   script:
-    # 传输制品并按 systemd 重启（占位脚本，按《储能资讯平台部署运维文档》细化）
-    # 注意：整行加单引号——YAML 未引号标量含"冒号+空格"会被误解析为映射（此前流水线 yaml无效 的根因）
-    - 'echo "TODO: scp jar/dist 到目标机并 systemctl restart ums-main / 替换 nginx dist"'
-    - 'test -n "$DEPLOY_SSH_HOST" || (echo "未配置 DEPLOY_SSH_HOST，跳过"; exit 0)'
+    - 'JAR=$(ls services/ums-main-java/target/ums-main-*.jar | head -1); test -n "$JAR" || (echo "未找到 jar 产物"; exit 1)'
+    - 'install -D -m 644 "$JAR" "${DEPLOY_JAR_PATH:-/opt/ums/ums-main.jar}"'
+    - 'systemctl restart "${UMS_SERVICE_NAME:-ums-main}"'
+    - |
+      echo "等待服务监听 ${DEPLOY_HEALTH_PORT:-8080} ..."
+      for i in $(seq 1 30); do
+        sleep 2
+        if timeout 1 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/${DEPLOY_HEALTH_PORT:-8080}" 2>/dev/null; then
+          echo "服务已启动（${i}次探测）"; exit 0
+        fi
+      done
+      echo "健康检查超时，请查日志: journalctl -u ${UMS_SERVICE_NAME:-ums-main} -n 100"; exit 1
+  environment:
+    name: dev
+
+deploy:web:
+  stage: deploy
+  tags: [deploy]
+  needs: ["frontend:build"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+  script:
+    - 'mkdir -p "${DEPLOY_WEB_DIR:-/opt/ums/web}"'
+    - 'rsync -a --delete services/ums-web/dist/ "${DEPLOY_WEB_DIR:-/opt/ums/web}/"'
+    - 'echo "前端已发布到 ${DEPLOY_WEB_DIR:-/opt/ums/web}（静态文件无需重启 nginx）"'
   environment:
     name: dev
