@@ -27,7 +27,8 @@ import java.util.List;
  * <ul>
  *   <li>应用已在晶彩注册，appKey/appSecret/agentId 由 IAM 负责人提供</li>
  *   <li>本应用服务器出口 IP 已配置到钉钉接口白名单</li>
- *   <li>接收人为钉钉 userid（工号），配置于 UMS_JINGCAI_RECEIVERS</li>
+ *   <li>接收人为钉钉 userid（工号）：登录过的 IAM 用户自动纳入（external_id），
+ *       额外名单配置于 UMS_JINGCAI_RECEIVERS，合并去重</li>
  * </ul>
  *
  * <p>发送逻辑收敛在本类；如后续拿到晶彩平台专属卡片 API，
@@ -46,6 +47,7 @@ public class JingcaiCardSender {
     private static final String SEND_URL = "https://oapi.dingtalk.com/topapi/message/corpconversation/asyncsend_v2";
 
     private final JingcaiProperties props;
+    private final JingcaiReceiverResolver receiverResolver;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** token 缓存：过期前 60s 刷新 */
@@ -71,9 +73,10 @@ public class JingcaiCardSender {
         requireConfigured(props.getAgentId(), "ums.jingcai.agent-id / UMS_JINGCAI_AGENT_ID");
         requireConfigured(props.getCardLink(), "ums.jingcai.card-link / UMS_JINGCAI_CARD_LINK");
 
-        List<String> receivers = props.receiverList();
+        List<String> receivers = receiverResolver.resolve();
         if (receivers.isEmpty()) {
-            throw new BadCredentialsException("接收人未配置（UMS_JINGCAI_RECEIVERS）");
+            throw new BadCredentialsException(
+                    "接收人列表为空：请检查 UMS_JINGCAI_RECEIVERS 配置，或是否有 IAM 用户已登录（auto-subscribe）");
         }
 
         // action_card 消息体：markdown 正文 + 单按钮（打开看板）

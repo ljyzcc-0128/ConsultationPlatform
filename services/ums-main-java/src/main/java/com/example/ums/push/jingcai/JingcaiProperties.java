@@ -29,8 +29,14 @@ public class JingcaiProperties {
     /** 钉钉工作通知 agentId */
     private String agentId;
 
-    /** 接收人钉钉 userid 列表（逗号分隔，环境变量配置） */
+    /** 接收人钉钉 userid 列表（逗号分隔，环境变量配置）；与自动名单合并 */
     private String receivers;
+
+    /** 自动订阅：将已登录（provider=IAM 且 ACTIVE）用户的 external_id 纳入接收名单，默认开启 */
+    private boolean autoSubscribe = true;
+
+    /** 日报 AI 综述：LLM 已配置时在日报头部生成数据综述，失败自动降级纯数据版 */
+    private boolean aiSummary = true;
 
     /** 卡片"打开看板"按钮链接（IAM SSO 授权地址，含 URL 编码的 redirect_uri 与 target 参数） */
     private String cardLink;
@@ -64,6 +70,12 @@ public class JingcaiProperties {
 
     public String getReceivers() { return receivers; }
     public void setReceivers(String receivers) { this.receivers = receivers; }
+
+    public boolean isAutoSubscribe() { return autoSubscribe; }
+    public void setAutoSubscribe(boolean autoSubscribe) { this.autoSubscribe = autoSubscribe; }
+
+    public boolean isAiSummary() { return aiSummary; }
+    public void setAiSummary(boolean aiSummary) { this.aiSummary = aiSummary; }
 
     public String getCardLink() { return cardLink; }
     public void setCardLink(String cardLink) { this.cardLink = cardLink; }

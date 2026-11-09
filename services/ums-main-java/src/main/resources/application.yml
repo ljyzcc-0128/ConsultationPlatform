@@ -63,6 +63,18 @@ ums:
   jingcai:
     enabled: false
     timeout-seconds: 10
+    # 接收人自动订阅：SSO/IAM 登录过的用户自动纳入日报接收名单（external_id=工号=钉钉userid）
+    auto-subscribe: true
+    # 日报头部 AI 综述（依赖 ums.llm 配置，未配置或调用失败自动降级纯数据版）
+    ai-summary: true
+
+  llm:
+    # LLM 统一接入层（OpenAI 兼容协议），GLM 公网/公司网关/内网 vLLM 均可通过环境变量切换
+    # 未配置时调用 LlmAdapter 会报明确错误，不影响应用启动
+    base-url: ${UMS_LLM_BASE_URL:}      # 如 GLM: https://open.bigmodel.cn/api/paas/v4
+    api-key: ${UMS_LLM_API_KEY:}        # 仅环境变量，不进仓库
+    model: ${UMS_LLM_MODEL:}            # 如 glm-4-flash
+    timeout-seconds: 60
 
   xxl-job:
     enabled: false

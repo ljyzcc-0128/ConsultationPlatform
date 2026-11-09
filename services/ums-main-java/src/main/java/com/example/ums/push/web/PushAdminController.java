@@ -2,7 +2,7 @@ package com.example.ums.push.web;
 
 import com.example.ums.push.dto.PushTaskDto;
 import com.example.ums.push.jingcai.JingcaiCardSender;
-import com.example.ums.push.jingcai.JingcaiProperties;
+import com.example.ums.push.jingcai.JingcaiReceiverResolver;
 import com.example.ums.push.jingcai.SupplyChainDigestService;
 import com.example.ums.push.service.PushTaskService;
 import org.springframework.http.HttpStatus;
@@ -26,7 +26,7 @@ public class PushAdminController {
     private final PushTaskService pushTaskService;
     private final SupplyChainDigestService digestService;
     private final JingcaiCardSender jingcaiCardSender;
-    private final JingcaiProperties jingcaiProperties;
+    private final JingcaiReceiverResolver receiverResolver;
 
     /** 推送任务列表（含统计）。 */
     @GetMapping
@@ -52,7 +52,7 @@ public class PushAdminController {
             return Map.of(
                     "title", card.title(),
                     "taskId", taskId,
-                    "receivers", jingcaiProperties.receiverList());
+                    "receivers", receiverResolver.resolve());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }

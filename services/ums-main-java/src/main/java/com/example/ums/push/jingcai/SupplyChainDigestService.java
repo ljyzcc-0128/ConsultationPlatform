@@ -1,8 +1,13 @@
 package com.example.ums.push.jingcai;
 
+import com.example.ums.llm.LlmAdapter;
+import com.example.ums.llm.LlmOptions;
+import com.example.ums.llm.LlmProperties;
 import com.example.ums.supplychain.dto.IndicatorSeriesDto;
 import com.example.ums.supplychain.dto.InventoryBlockDto;
 import com.example.ums.supplychain.service.SupplyChainService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
@@ -24,9 +29,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SupplyChainDigestService {
 
+    private static final Logger log = LoggerFactory.getLogger(SupplyChainDigestService.class);
+
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("M月d日");
 
     private final SupplyChainService supplyChainService;
+    private final LlmAdapter llmAdapter;
+    private final LlmProperties llmProperties;
+    private final JingcaiProperties jingcaiProperties;
 
     /** 卡片内容 */
     public record DigestCard(String title, String markdown) {
@@ -65,9 +75,38 @@ public class SupplyChainDigestService {
             md.append('\n');
         }
 
+        // ---------- AI 综述（LLM 未配置/失败时自动降级为纯数据版） ----------
+        String overview = buildAiOverview(md.toString().trim());
+        if (overview != null) {
+            md.insert(0, "### 今日综述\n\n" + overview + "\n\n");
+        }
+
         String date = LocalDate.now().format(DATE_FMT);
         return new DigestCard("供应链日报 · " + date,
                 "## 供应链日报 · " + date + "\n\n" + md);
+    }
+
+    /**
+     * 调用 LLM 生成 2-3 句数据综述。
+     * 开关关闭、LLM 未配置或调用失败时返回 null（日报仍可发出，只是没有综述段）。
+     */
+    private String buildAiOverview(String statsMarkdown) {
+        if (!jingcaiProperties.isAiSummary() || !llmProperties.isConfigured()) {
+            return null;
+        }
+        try {
+            String overview = llmAdapter.chat(
+                    "你是供应链资讯编辑，负责撰写每日日报的数据综述。要求："
+                            + "1) 只依据给定数据撰写，不得编造或引入外部信息；"
+                            + "2) 2-3 句简明中文，点出最显著的变化与值得注意的风险；"
+                            + "3) 不使用 markdown 标题与列表，全文不超过 120 字。",
+                    statsMarkdown,
+                    LlmOptions.builder().temperature(0.3).maxTokens(1024).build());
+            return overview == null || overview.isBlank() ? null : overview.trim();
+        } catch (Exception e) {
+            log.warn("AI 综述生成失败，日报降级为纯数据版: {}", e.getMessage());
+            return null;
+        }
     }
 
     /** 数值格式化：保留 2 位小数 */
