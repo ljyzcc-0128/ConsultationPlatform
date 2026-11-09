@@ -134,7 +134,7 @@ ai:review:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   allow_failure: true
   script:
-    - python3 scripts/ci/ai_review.py
+    - python3 .gitlab/ci/ai_review.py
 
 # ---------- 部署（手动） ----------
 # 前提：自建 GitLab Runner 部署在部署服务器（或可 SSH 到目标机的机器），
