@@ -45,9 +45,10 @@ def http_json(url, token=None, data=None, method="GET"):
 
 
 def fetch_diff_api(api, project_id, mr_iid, token):
-    """优先走 API 读 MR diff（完整可靠）。"""
-    url = f"{api}/projects/{project_id}/merge_requests/{mr_iid}/diffs?per_page=100"
-    files = http_json(url, token=token)
+    """优先走 API 读 MR diff（完整可靠）。/diffs 在部分 GitLab 版本不存在，用 /changes。"""
+    url = f"{api}/projects/{project_id}/merge_requests/{mr_iid}/changes?per_page=100"
+    data = http_json(url, token=token)
+    files = data.get("changes") or []
     parts = []
     for f in files:
         d = (f.get("diff") or "")[:MAX_FILE_DIFF_CHARS]
