@@ -1,0 +1,139 @@
+# GitLab CI 基线流水线
+# 三条产品线按路径增量触发：Java 后端 / Vite 前端 / Python 爬虫
+# 后续在此基线上插入 AI 阶段（MR 代码评审、变更摘要），见 docs 注释与 deploy 前的 ai-review 预留段
+
+workflow:
+  rules:
+    # MR 流水线 + dev/main 分支推送触发；其他分支/tag 不跑
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+stages:
+  - build
+  - test
+  - package
+  - deploy
+
+# ---------- Java 后端（Spring Boot 17 / Maven） ----------
+backend:compile:
+  stage: build
+  image: maven:3.9-eclipse-temurin-17
+  rules:
+    - changes:
+        - services/ums-main-java/**/*
+  script:
+    - mvn -q compile
+  cache:
+    key: maven-repo
+    paths:
+      - .m2/repository
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+backend:test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-17
+  rules:
+    - changes:
+        - services/ums-main-java/**/*
+  script:
+    - mvn test
+  cache:
+    key: maven-repo
+    paths:
+      - .m2/repository
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  artifacts:
+    when: always
+    reports:
+      junit: services/ums-main-java/target/surefire-reports/TEST-*.xml
+    expire_in: 1 week
+
+backend:package:
+  stage: package
+  image: maven:3.9-eclipse-temurin-17
+  rules:
+    # 仅 dev/main 跑打包（MR 阶段测试通过即可）
+    - if: $CI_COMMIT_BRANCH == "dev"
+      changes:
+        - services/ums-main-java/**/*
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - services/ums-main-java/**/*
+  script:
+    - mvn -q package -DskipTests
+  cache:
+    key: maven-repo
+    paths:
+      - .m2/repository
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  artifacts:
+    paths:
+      - services/ums-main-java/target/*.jar
+    expire_in: 1 week
+
+# ---------- 前端（React + Vite） ----------
+frontend:build:
+  stage: build
+  image: node:20
+  rules:
+    - changes:
+        - services/ums-web/**/*
+  script:
+    - cd services/ums-web
+    - npm ci
+    # 类型检查 + 构建作为基线质量门禁
+    - npx tsc --noEmit
+    - npm run build
+  cache:
+    key: npm-cache
+    paths:
+      - services/ums-web/.npm
+  variables:
+    npm_config_cache: "$CI_PROJECT_DIR/services/ums-web/.npm"
+  artifacts:
+    paths:
+      - services/ums-web/dist/
+    expire_in: 1 week
+
+# ---------- Python 爬虫 ----------
+crawler:test:
+  stage: test
+  image: python:3.11
+  rules:
+    - changes:
+        - services/ums-crawler-py/**/*
+  script:
+    - cd services/ums-crawler-py
+    - pip install --cache-dir .pip-cache -r requirements.txt
+    - mkdir -p reports && python -m pytest --junitxml=reports/junit.xml
+  cache:
+    key: pip-cache
+    paths:
+      - services/ums-crawler-py/.pip-cache
+  artifacts:
+    when: always
+    reports:
+      junit: services/ums-crawler-py/reports/junit.xml
+    expire_in: 1 week
+  # 爬虫测试依赖外网数据源时可能不稳定：先不阻断流水线，稳定后移除
+  allow_failure: true
+
+# ---------- 部署（手动） ----------
+# 前提：自建 GitLab Runner 部署在部署服务器（或可 SSH 到目标机的机器），
+# CI/CD Variables 中配置 DEPLOY_SSH_HOST / DEPLOY_SSH_USER / DEPLOY_SSH_KEY（File 类型）
+deploy:dev:
+  stage: deploy
+  image: alpine:3.20
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+  script:
+    # 传输制品并按 systemd 重启（占位脚本，按《储能资讯平台部署运维文档》细化）
+    - echo "TODO: scp jar/dist 到目标机并 systemctl restart ums-main / 替换 nginx dist"
+    - test -n "$DEPLOY_SSH_HOST" || (echo "未配置 DEPLOY_SSH_HOST，跳过"; exit 0)
+  environment:
+    name: dev
