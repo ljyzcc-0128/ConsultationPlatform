@@ -278,6 +278,19 @@ export interface IndicatorPoint {
   value: number;
 }
 
+/** 同指标多市场明细（卓创华东各省市行）：市场名 + 最新价 */
+export interface IndicatorSubjectPoint {
+  subject: string;
+  value: number;
+  date: string;
+}
+
+/** 一个交易日下各市场的价格快照（多市场按日趋势，供横轴市场、多日曲线对比图） */
+export interface IndicatorSubjectDay {
+  date: string;
+  points: IndicatorSubjectPoint[];
+}
+
 export interface IndicatorSeries {
   code: string;
   name: string;
@@ -287,6 +300,10 @@ export interface IndicatorSeries {
   latestValue: number;
   momChange: number;
   points: IndicatorPoint[];
+  /** 明细主体最新值；无细分指标为空数组（此时展示大数值） */
+  subjects: IndicatorSubjectPoint[];
+  /** 多市场按日趋势（最新 3 个交易日，日期升序）；无细分指标为空数组 */
+  subjectTrend: IndicatorSubjectDay[];
 }
 
 export interface InventoryBlock {

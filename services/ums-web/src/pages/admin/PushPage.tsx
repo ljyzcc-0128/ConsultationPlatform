@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Space, Table, Tag, Typography, message } from 'antd';
-import { PauseCircleOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { PauseCircleOutlined, PlayCircleOutlined, SendOutlined } from '@ant-design/icons';
 import { api } from '../../api/client';
 import { ErrorState } from '../../components/ErrorState';
 import { LazyChart } from '../../components/LazyChart';
@@ -57,6 +57,17 @@ export function PushPage() {
     },
   });
 
+  const jingcaiMutation = useMutation({
+    mutationFn: () =>
+      api.post<never, { title: string; taskId: number; receivers: string[] }>('/v1/admin/push/jingcai/digest'),
+    onSuccess: (res) => {
+      message.success(`已推送「${res.title}」，接收 ${res.receivers.length} 人，钉钉 task_id=${res.taskId}`);
+    },
+    onError: () => {
+      message.error('推送失败，请检查钉钉推送配置（appKey/appSecret/agentId）');
+    },
+  });
+
   const tasks = data ?? [];
 
   return (
@@ -68,6 +79,14 @@ export function PushPage() {
             推送任务按关注规则聚合内容，通过配置的渠道发送；此处查看发送效果统计。
           </div>
         </div>
+        <Button
+          type="primary"
+          icon={<SendOutlined />}
+          loading={jingcaiMutation.isPending}
+          onClick={() => jingcaiMutation.mutate()}
+        >
+          立即推送晶彩日报
+        </Button>
       </div>
 
       <div className="admin-table-wrap">

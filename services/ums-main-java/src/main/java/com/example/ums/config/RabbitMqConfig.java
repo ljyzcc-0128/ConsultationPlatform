@@ -44,6 +44,18 @@ public class RabbitMqConfig {
     public static final String ROUTING_SUPPLYCHAIN_WBILL_DEAD = "supplychain.wbill.dead";
     public static final String QUEUE_SUPPLYCHAIN_WBILL_DLQ = "ums.supplychain.wbill.dlq";
 
+    /** 供应链 SMM 报价采集（Python 爬虫发布） */
+    public static final String ROUTING_SUPPLYCHAIN_SMM_FETCHED = "supplychain.smm.fetched";
+    public static final String QUEUE_SUPPLYCHAIN_SMM = "ums.supplychain.smm.queue";
+    public static final String ROUTING_SUPPLYCHAIN_SMM_DEAD = "supplychain.smm.dead";
+    public static final String QUEUE_SUPPLYCHAIN_SMM_DLQ = "ums.supplychain.smm.dlq";
+
+    /** 供应链卓创报价采集（Python 爬虫发布） */
+    public static final String ROUTING_SUPPLYCHAIN_SCI99_FETCHED = "supplychain.sci99.fetched";
+    public static final String QUEUE_SUPPLYCHAIN_SCI99 = "ums.supplychain.sci99.queue";
+    public static final String ROUTING_SUPPLYCHAIN_SCI99_DEAD = "supplychain.sci99.dead";
+    public static final String QUEUE_SUPPLYCHAIN_SCI99_DLQ = "ums.supplychain.sci99.dlq";
+
     /** topic exchange，Python 端已 durable 声明过，参数一致则幂等 */
     @Bean
     public TopicExchange umsExchange() {
@@ -170,5 +182,63 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(supplychainWbillDlq())
                 .to(umsDlx())
                 .with(ROUTING_SUPPLYCHAIN_WBILL_DEAD);
+    }
+
+    /** 供应链 SMM 队列：消费 supplychain.smm.fetched（Python 爬虫发布），失败进 DLQ */
+    @Bean
+    public Queue supplychainSmmQueue() {
+        return QueueBuilder.durable(QUEUE_SUPPLYCHAIN_SMM)
+                .deadLetterExchange(EXCHANGE_DLX)
+                .deadLetterRoutingKey(ROUTING_SUPPLYCHAIN_SMM_DEAD)
+                .build();
+    }
+
+    @Bean
+    public Binding supplychainSmmBinding() {
+        return BindingBuilder.bind(supplychainSmmQueue())
+                .to(umsExchange())
+                .with(ROUTING_SUPPLYCHAIN_SMM_FETCHED);
+    }
+
+    /** 供应链 SMM 死信队列 */
+    @Bean
+    public Queue supplychainSmmDlq() {
+        return QueueBuilder.durable(QUEUE_SUPPLYCHAIN_SMM_DLQ).build();
+    }
+
+    @Bean
+    public Binding supplychainSmmDeadBinding() {
+        return BindingBuilder.bind(supplychainSmmDlq())
+                .to(umsDlx())
+                .with(ROUTING_SUPPLYCHAIN_SMM_DEAD);
+    }
+
+    /** 供应链卓创队列：消费 supplychain.sci99.fetched（Python 爬虫发布），失败进 DLQ */
+    @Bean
+    public Queue supplychainSci99Queue() {
+        return QueueBuilder.durable(QUEUE_SUPPLYCHAIN_SCI99)
+                .deadLetterExchange(EXCHANGE_DLX)
+                .deadLetterRoutingKey(ROUTING_SUPPLYCHAIN_SCI99_DEAD)
+                .build();
+    }
+
+    @Bean
+    public Binding supplychainSci99Binding() {
+        return BindingBuilder.bind(supplychainSci99Queue())
+                .to(umsExchange())
+                .with(ROUTING_SUPPLYCHAIN_SCI99_FETCHED);
+    }
+
+    /** 供应链卓创死信队列 */
+    @Bean
+    public Queue supplychainSci99Dlq() {
+        return QueueBuilder.durable(QUEUE_SUPPLYCHAIN_SCI99_DLQ).build();
+    }
+
+    @Bean
+    public Binding supplychainSci99DeadBinding() {
+        return BindingBuilder.bind(supplychainSci99Dlq())
+                .to(umsDlx())
+                .with(ROUTING_SUPPLYCHAIN_SCI99_DEAD);
     }
 }

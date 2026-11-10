@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -55,9 +56,40 @@ public class SupplyChainServiceImpl implements SupplyChainService {
             List<IndicatorPointDto> pointDtos = points.stream()
                     .map(p -> new IndicatorPointDto(p.getPointDate(), p.getValue()))
                     .toList();
+            // 同指标多市场明细（卓创华东各省市行）：每主体取最新一条，供前端展示「市场+价格」
+            List<CpIndicatorPoint> subjectPoints = points.stream()
+                    .filter(p -> p.getSubject() != null && !p.getSubject().isBlank())
+                    .toList();
+            List<IndicatorSeriesDto.SubjectPoint> subjects = new java.util.LinkedHashMap<String, CpIndicatorPoint>() {{
+                subjectPoints.stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                CpIndicatorPoint::getSubject, p -> p,
+                                (a, b) -> a.getPointDate().isAfter(b.getPointDate()) ? a : b,
+                                java.util.LinkedHashMap::new))
+                        .forEach((k, v) -> put(k, v));
+            }}.values().stream()
+                    .map(p -> new IndicatorSeriesDto.SubjectPoint(
+                            p.getSubject(), p.getValue(), p.getPointDate()))
+                    .toList();
+            // 多市场按日趋势：取最新 3 个交易日（升序），每日内各市场主体价格快照
+            List<LocalDate> trendDates = subjectPoints.stream()
+                    .map(CpIndicatorPoint::getPointDate)
+                    .distinct()
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .limit(3)
+                    .sorted()
+                    .toList();
+            List<IndicatorSeriesDto.SubjectDayDto> subjectTrend = trendDates.stream()
+                    .map(d -> new IndicatorSeriesDto.SubjectDayDto(d,
+                            subjectPoints.stream()
+                                    .filter(p -> p.getPointDate().equals(d))
+                                    .map(p -> new IndicatorSeriesDto.SubjectPoint(
+                                            p.getSubject(), p.getValue(), p.getPointDate()))
+                                    .toList()))
+                    .toList();
             return new IndicatorSeriesDto(s.getCode(), s.getName(), s.getUnit(),
                     s.getDataScope(), s.getSourceName(), s.getLatestValue(),
-                    s.getMomChange(), pointDtos);
+                    s.getMomChange(), pointDtos, subjects, subjectTrend);
         }).toList();
     }
 

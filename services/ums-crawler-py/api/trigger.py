@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from parsing.date_parser import parse_publish_time
 from runner import run_source
-from supplychain.service import parse_trade_date, run_gfex_collection
+from supplychain.service import parse_trade_date, run_gfex_collection, run_sci99_collection, run_smm_collection
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -57,3 +57,28 @@ async def trigger_gfex(body: SupplyChainTriggerBody | None = None):
     return await run_gfex_collection(trade_date=trade_date,
                                      varieties=body.varieties,
                                      trigger_type=body.trigger_type or 'MANUAL')
+
+
+@app.post('/internal/trigger/supplychain/smm')
+async def trigger_smm(body: SupplyChainTriggerBody | None = None):
+    """SMM 报价采集（cookie/账号登录后抓取）：采集+发 MQ，数据由 Java 消费者加工落库"""
+    body = body or SupplyChainTriggerBody()
+    try:
+        trade_date = parse_trade_date(body.trade_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail={'code': 'SC_4221', 'message': str(exc)})
+    return await run_smm_collection(trade_date=trade_date,
+                                    metrics=body.varieties,
+                                    trigger_type=body.trigger_type or 'MANUAL')
+
+
+@app.post('/internal/trigger/supplychain/sci99')
+async def trigger_sci99(body: SupplyChainTriggerBody | None = None):
+    """卓创氮气早间提示采集（cookie 注入后抓取）：采集+发 MQ，数据由 Java 消费者加工落库"""
+    body = body or SupplyChainTriggerBody()
+    try:
+        trade_date = parse_trade_date(body.trade_date)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail={'code': 'SC_4221', 'message': str(exc)})
+    return await run_sci99_collection(trade_date=trade_date,
+                                      trigger_type=body.trigger_type or 'MANUAL')

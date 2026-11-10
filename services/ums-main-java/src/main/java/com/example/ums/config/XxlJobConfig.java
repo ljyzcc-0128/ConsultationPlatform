@@ -25,13 +25,25 @@ public class XxlJobConfig {
             @Value("${ums.xxl-job.admin-addresses}") String adminAddresses,
             @Value("${ums.xxl-job.appname}") String appname,
             @Value("${ums.xxl-job.port}") int port,
-            @Value("${ums.xxl-job.access-token}") String accessToken) {
-        log.info("XXL-JOB 执行器初始化：admin={}, appname={}, port={}", adminAddresses, appname, port);
+            @Value("${ums.xxl-job.access-token}") String accessToken,
+            @Value("${ums.xxl-job.ip:}") String ip,
+            @Value("${ums.xxl-job.log-path:}") String logPath) {
+        log.info("XXL-JOB 执行器初始化：admin={}, appname={}, port={}, ip={}, logPath={}",
+                adminAddresses, appname, port, ip.isEmpty() ? "<自动探测>" : ip,
+                logPath.isEmpty() ? "<xxl默认>" : logPath);
         XxlJobSpringExecutor executor = new XxlJobSpringExecutor();
         executor.setAdminAddresses(adminAddresses);
         executor.setAppname(appname);
         executor.setPort(port);
         executor.setAccessToken(accessToken);
+        // 本机多网卡（VPN utun）时自动探测的地址可能对调度中心不可达，local 环境固定 127.0.0.1
+        if (!ip.isEmpty()) {
+            executor.setIp(ip);
+        }
+        // 默认 /data/applogs/xxl-job/jobhandler 在 macOS 只读根目录下无法创建，由环境配置覆盖
+        if (!logPath.isEmpty()) {
+            executor.setLogPath(logPath);
+        }
         return executor;
     }
 }

@@ -19,7 +19,7 @@ import { ErrorState } from '../../components/ErrorState';
 import { ListSkeleton } from '../../components/ListSkeleton';
 import { useTheme } from '../../theme/ThemeProvider';
 import { moduleChartPalette, getTrendColors, type ChartPalette } from '../../theme/chartTheme';
-import type { IndicatorSeries, InventoryBlock } from '../../api/types';
+import type { IndicatorSeries, IndicatorSubjectDay, InventoryBlock } from '../../api/types';
 
 /* =========================================================
    模块元数据（章节卡与渲染分支同一数据源）
@@ -101,6 +101,49 @@ function sparklineOption(
   };
 }
 
+/** 多市场按日对比曲线：横轴市场名、纵轴价格，最新 N 个交易日各一条曲线。
+ *  市场轴以最新一日的主体顺序为准；某日缺失的市场点补 null（曲线断开）。 */
+function subjectTrendOption(
+  trend: IndicatorSubjectDay[],
+  unit: string,
+  chart: ChartPalette,
+) {
+  const latest = trend[trend.length - 1];
+  const categories = latest.points.map((p) => p.subject);
+  return {
+    color: chart.colors,
+    grid: { left: 44, right: 16, top: 30, bottom: 26 },
+    legend: { top: 0, textStyle: { color: chart.label, fontSize: 11 } },
+    tooltip: {
+      trigger: 'axis',
+      valueFormatter: (value: unknown) => (value == null ? '-' : `${value} ${unit}`),
+    },
+    xAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: { color: chart.label, fontSize: 11 },
+      axisTick: { show: false },
+      axisLine: { lineStyle: { color: chart.line } },
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      axisLabel: { color: chart.label, fontSize: 11 },
+      splitLine: { lineStyle: { color: chart.line } },
+    },
+    series: trend.map((day) => ({
+      name: day.date.slice(5),
+      type: 'line',
+      smooth: 0.3,
+      symbol: 'circle',
+      symbolSize: 6,
+      data: categories.map(
+        (c) => day.points.find((p) => p.subject === c)?.value ?? null,
+      ),
+    })),
+  };
+}
+
 function comboOption(block: InventoryBlock, chart: ChartPalette) {
   return {
     color: chart.colors,
@@ -149,7 +192,9 @@ function comboOption(block: InventoryBlock, chart: ChartPalette) {
   };
 }
 
-/** SC-001：原材料市场指标卡片（指标名+来源标注 / 大数值+环比角标 / 涨跌着色迷你走势） */
+/** SC-001：原材料市场指标卡片（指标名+来源标注 / 大数值+环比角标 或 多市场对比曲线）。
+ *  同指标含多市场明细（如卓创华东逐省市价格）时：省份价格融合进对比曲线
+ *  （横轴市场、纵轴价格、最新 3 个交易日各一条曲线），不再单独展示大数值。 */
 function IndicatorCard({
   indicator,
   chart,
@@ -160,31 +205,48 @@ function IndicatorCard({
   trendColor: string;
 }) {
   const up = indicator.momChange >= 0;
+  const hasSubjects = indicator.subjectTrend.length > 0;
   return (
     <div className="indicator-card">
       <div className="ind-top">
         <span className="ind-name">{indicator.name}</span>
         <DataSourceBadge scope={indicator.dataScope} sourceName={indicator.sourceName} />
       </div>
-      <div className="ind-value-row">
-        <span className="ind-value">{indicator.latestValue}</span>
-        <span className="ind-unit">{indicator.unit}</span>
-        <span className={up ? 'ind-chip up' : 'ind-chip down'}>
-          {up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(indicator.momChange)}%
-          <em>环比</em>
-        </span>
-      </div>
-      <div className="ind-chart">
-        <LazyChart
-          option={sparklineOption(indicator.points, indicator.unit, trendColor, chart)}
-          height={150}
-          fallback={
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              <DotChartOutlined /> 图表加载中…
-            </Typography.Text>
-          }
-        />
-      </div>
+      {hasSubjects ? (
+        <div className="ind-chart">
+          <LazyChart
+            option={subjectTrendOption(indicator.subjectTrend, indicator.unit, chart)}
+            height={230}
+            fallback={
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                <DotChartOutlined /> 图表加载中…
+              </Typography.Text>
+            }
+          />
+        </div>
+      ) : (
+        <>
+          <div className="ind-value-row">
+            <span className="ind-value">{indicator.latestValue}</span>
+            <span className="ind-unit">{indicator.unit}</span>
+            <span className={up ? 'ind-chip up' : 'ind-chip down'}>
+              {up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(indicator.momChange)}%
+              <em>环比</em>
+            </span>
+          </div>
+          <div className="ind-chart">
+            <LazyChart
+              option={sparklineOption(indicator.points, indicator.unit, trendColor, chart)}
+              height={150}
+              fallback={
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  <DotChartOutlined /> 图表加载中…
+                </Typography.Text>
+              }
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

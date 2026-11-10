@@ -4,7 +4,7 @@ spring:
 
   # 默认激活 dev，生产通过启动参数/环境变量覆盖
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
   # Flyway 公共配置（连接信息在各自 profile 中）
   flyway:
@@ -84,6 +84,8 @@ ums:
     admin-addresses: ${UMS_XXL_ADMIN:}
     username: ${UMS_XXL_USER:admin}
     password: ${UMS_XXL_PASSWORD:123456}
+    # 执行器日志目录：不配置则用 xxl 默认（/data/applogs/xxl-job/jobhandler，仅 Linux 可用）
+    log-path: ${UMS_XXL_LOG_PATH:}
 
 logging:
   level:

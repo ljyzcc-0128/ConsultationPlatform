@@ -9,6 +9,8 @@ import org.apache.ibatis.annotations.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import org.apache.ibatis.annotations.Select;
+
 /** 指标数据点 Mapper。 */
 @Mapper
 public interface IndicatorPointMapper extends BaseMapper<CpIndicatorPoint> {
@@ -23,4 +25,14 @@ public interface IndicatorPointMapper extends BaseMapper<CpIndicatorPoint> {
                     @Param("pointDate") LocalDate pointDate,
                     @Param("subject") String subject,
                     @Param("value") BigDecimal value);
+
+    /** 严格早于 pointDate 的最近数据点（价格类指标环比/异动检测基期） */
+    @Select("""
+            SELECT * FROM cp_indicator_point
+            WHERE series_code = #{seriesCode} AND subject = #{subject} AND point_date < #{pointDate}
+            ORDER BY point_date DESC LIMIT 1
+            """)
+    CpIndicatorPoint selectPrevPoint(@Param("seriesCode") String seriesCode,
+                                     @Param("pointDate") LocalDate pointDate,
+                                     @Param("subject") String subject);
 }
