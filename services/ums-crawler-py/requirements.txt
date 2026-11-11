@@ -8,7 +8,7 @@ trafilatura>=2.2
 dateparser>=1.4
 PyYAML>=6.0
 langdetect>=1.0.9
-playwright>=1.40        # 仅 INT-03 等 JS 渲染信源需要，浏览器需单独 playwright install chromium
+playwright==1.40.0      # 锁定版本：Dockerfile 基础镜像内置 1.40.0 浏览器，勿随意外升
 
 # 触发接口
 fastapi>=0.115
