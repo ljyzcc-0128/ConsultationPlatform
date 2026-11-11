@@ -46,10 +46,29 @@ public class SupplyChainCrawlJob {
         triggerCrawler("/internal/trigger/supplychain/gfex", "供应链仓单采集");
     }
 
-    /** XXL-JOB 任务入口：触发 SMM 报价采集。任务参数（可选）：数据日期 yyyy-MM-dd。 */
+    /** XXL-JOB 任务入口：触发 SMM 报价采集。
+     * 任务参数口径（跟随官网更新频率，调度中心拆分日/周/月三类任务）：
+     * - 空：采集全部指标
+     * - daily / weekly / monthly：按指标官网更新周期过滤（daily=现货均价类，weekly=周均价/库存，
+     *   monthly=盐厂排产）
+     * - yyyy-MM-dd：指定数据日期（兼容原口径），采集全部指标 */
     @XxlJob("supplyChainSmmJob")
     public void supplyChainSmmJob() {
-        triggerCrawler("/internal/trigger/supplychain/smm", "供应链SMM报价采集");
+        String param = XxlJobHelper.getJobParam();
+        String trimmed = param == null ? "" : param.trim();
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            triggerCrawler("/internal/trigger/supplychain/smm", "供应链SMM报价采集",
+                    Map.of("trigger_type", "SCHEDULED", "trade_date", trimmed));
+        } else if (trimmed.matches("daily|weekly|monthly")) {
+            triggerCrawler("/internal/trigger/supplychain/smm", "供应链SMM报价采集(" + trimmed + ")",
+                    Map.of("trigger_type", "SCHEDULED", "period", trimmed));
+        } else if (trimmed.isEmpty()) {
+            triggerCrawler("/internal/trigger/supplychain/smm", "供应链SMM报价采集",
+                    Map.of("trigger_type", "SCHEDULED"));
+        } else {
+            XxlJobHelper.handleFail("不支持的任务参数: " + trimmed
+                    + "（应为空 / daily / weekly / monthly / yyyy-MM-dd）");
+        }
     }
 
     /** XXL-JOB 任务入口：触发卓创氮气早间提示采集。任务参数（可选）：数据日期 yyyy-MM-dd。 */
@@ -60,14 +79,17 @@ public class SupplyChainCrawlJob {
 
     /** 共用 HTTP 触发：POST 爬虫内部接口（采集→发 MQ），响应完整记录到任务日志 */
     private void triggerCrawler(String path, String taskLabel) {
+        triggerCrawler(path, taskLabel, null);
+    }
+
+    /** 共用 HTTP 触发（带自定义请求体）：body 为 null 时用 SCHEDULED 默认体 */
+    private void triggerCrawler(String path, String taskLabel, Map<String, Object> bodyOverride) {
         String base = props.getBaseUrl();
         if (base == null || base.isBlank()) {
             XxlJobHelper.handleFail("未配置爬虫地址 ums.crawler.base-url（环境变量 UMS_CRAWLER_BASEURL）");
             return;
         }
-        String tradeDate = XxlJobHelper.getJobParam();
-        Map<String, Object> body = tradeDate != null && !tradeDate.isBlank()
-                ? Map.of("trigger_type", "SCHEDULED", "trade_date", tradeDate.trim())
+        Map<String, Object> body = bodyOverride != null ? bodyOverride
                 : Map.of("trigger_type", "SCHEDULED");
         try {
             // 爬虫响应头不规范（Content-Type: application/octet-stream），

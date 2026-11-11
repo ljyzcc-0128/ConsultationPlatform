@@ -1,0 +1,44 @@
+# INT-08 Energy Trend（TrendForce 旗下新能源资讯/市场研究）
+# 勘察结论（2026-11-10）：WordPress 定制主题，静态可读；文章 URL 为
+# /news/YYYYMMDD-NNNNN.html 与 /research/YYYYMMDD-NNNNN.html；列表页标题链接
+# 带 rel="bookmark"（正文标题）与截断标题 li 链接两类；robots.txt 禁止 /page/
+# 分页路径，故不启用分页、单页抓取；详情正文 article > div.entry-content，
+# 发布时间在 td > span.newsdate（"2026-11-09 14:04" 格式）。
+# 多栏目 entry_urls：/news/（新闻）与 /research/（市场研究）。
+source_code: INT-08
+source_name: Energy Trend
+fetch_method: WEB
+entry_urls:
+  - https://www.energytrend.com/news/
+  - https://www.energytrend.com/research/
+language: en
+pagination: false
+max_pages: 1
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'a[rel="bookmark"]'
+detail_link_selector: 'a::attr(href)'
+title_selector: '::attr(title)'
+exclude_link_patterns:
+  - '/page/'
+  - '/tag/'
+  - '/author'
+  - '/category/'
+  - '/event/'
+  - '/interview/'
+
+title_selectors:
+  - 'h1.entry-title ::text'
+  - 'meta[property="og:title"]::attr(content)'
+body_selectors:
+  - 'article div.entry-content ::text'
+  - 'div.entry-content ::text'
+date_selectors:
+  - 'span.newsdate::text'
+  - 'td span.body::text'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

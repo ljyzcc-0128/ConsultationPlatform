@@ -17,6 +17,8 @@ public class CpNewsAnalysis {
 
     private String policyStatus;
     private String policyName;
+    /** 发布机构（JSON 数组文本，如 ["国家能源局","国家发改委"]），AI 加工后填充 */
+    private String issuingAuthority;
     private LocalDate effectiveDate;
     private String bessRelevance;
     private String jinkoEssRelevance;
@@ -31,6 +33,8 @@ public class CpNewsAnalysis {
     public void setPolicyStatus(String policyStatus) { this.policyStatus = policyStatus; }
     public String getPolicyName() { return policyName; }
     public void setPolicyName(String policyName) { this.policyName = policyName; }
+    public String getIssuingAuthority() { return issuingAuthority; }
+    public void setIssuingAuthority(String issuingAuthority) { this.issuingAuthority = issuingAuthority; }
     public LocalDate getEffectiveDate() { return effectiveDate; }
     public void setEffectiveDate(LocalDate effectiveDate) { this.effectiveDate = effectiveDate; }
     public String getBessRelevance() { return bessRelevance; }

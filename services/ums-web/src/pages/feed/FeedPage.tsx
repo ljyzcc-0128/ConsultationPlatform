@@ -19,42 +19,44 @@ function formatTime(item: FeedItem): string {
   return item.publishTime ? item.publishTime.replace('T', ' ') : item.publishDate;
 }
 
-/** MY-001 列表项：标题+摘要+来源+时间+已读圆点；重大变化视觉区分（MY-002） */
-function FeedItemRow({
-  item,
+/** 我的情报信源合并卡片：复刻情报中心信源视图卡片（信源名+共N条+最新一条），无红色标题 */
+function SourceGroupCard({
+  group,
   onOpen,
 }: {
-  item: FeedItem;
+  group: { sourceName: string; items: FeedItem[]; unread: number };
   onOpen: (id: string) => void;
 }) {
-  const isMajor = item.changeType === 'MAJOR';
+  const { sourceName, items, unread } = group;
+  const latest = items[0];
   return (
-    <div className="feed-item">
-      <div
-        className="feed-card"
-        onClick={() => onOpen(item.articleId)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpen(item.articleId);
-          }
-        }}
-        style={isMajor ? { borderLeft: '3px solid rgba(250,140,22,0.8)' } : undefined}
-      >
-        <div className="feed-title">{item.title}</div>
-        {item.summary && <div className="feed-summary">{item.summary}</div>}
-        <div className="feed-meta">
-          <span className="src">{item.sourceName}</span>
-          <span className="dot" />
-          <span>{formatTime(item)}</span>
-          {item.language === 'en' && <span className="tag en">EN</span>}
-          {!item.readStatus && <span className="tag new">新</span>}
+    <div
+      className="feed-item"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(latest.articleId)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(latest.articleId);
+        }
+      }}
+    >
+      <div className="feed-card source-card">
+        <div className="source-head">
+          <span className="src">{sourceName}</span>
+          <span className="src-count">
+            共 {items.length} 条{unread > 0 ? ` · ${unread} 条未读` : ''}
+          </span>
         </div>
-        <span className="expand-link" aria-hidden="true">
-          展开全文 →
-        </span>
+        <div className="feed-title">{latest.title}</div>
+        {latest.summary && <div className="feed-summary">{latest.summary}</div>}
+        <div className="feed-meta">
+          {latest.language && <span className="tag">{latest.language.toUpperCase()}</span>}
+          <span className="dot" />
+          <span>最新：{latest.publishDate ?? formatTime(latest)}</span>
+          {unread > 0 && <span className="tag new">{unread} 新</span>}
+        </div>
       </div>
     </div>
   );
@@ -72,7 +74,7 @@ function PushRecordRow({ record }: { record: PushRecord }) {
       <div className="feed-card">
         <div className="feed-title">{record.contentTitle}</div>
         <div className="feed-meta">
-          <span className="src">{CHANNEL_TEXT[record.channel]}</span>
+          <span className="push-channel">{CHANNEL_TEXT[record.channel]}</span>
           <span className="dot" />
           <span>{record.sentAt}</span>
           <span className={`tag ${statusClass}`}>{PUSH_MSG_STATUS_TEXT[record.status]}</span>
@@ -92,6 +94,24 @@ export function FeedPage() {
   const items = useMemo(() => data ?? [], [data]);
   const feedItems = items as FeedItem[];
   const unreadCount = feedItems.filter((i) => !i.readStatus).length;
+
+  /** 相同信源合并为一卡（展示最新一条），组内保持接口返回的时间倒序 */
+  const sourceGroups = useMemo(() => {
+    const map = new Map<string, FeedItem[]>();
+    feedItems.forEach((it) => {
+      const list = map.get(it.sourceName);
+      if (list) {
+        list.push(it);
+      } else {
+        map.set(it.sourceName, [it]);
+      }
+    });
+    return Array.from(map.entries()).map(([sourceName, list]) => ({
+      sourceName,
+      items: list,
+      unread: list.filter((i) => !i.readStatus).length,
+    }));
+  }, [feedItems]);
 
   const markAllRead = () => {
     const unreadIds = feedItems.filter((i) => !i.readStatus).map((i) => i.articleId);
@@ -180,12 +200,8 @@ export function FeedPage() {
         />
       ) : (
         <div className="timeline">
-          {feedItems.map((item) => (
-            <FeedItemRow
-              key={item.articleId}
-              item={item}
-              onOpen={handleOpen(item)}
-            />
+          {sourceGroups.map((group) => (
+            <SourceGroupCard key={group.sourceName} group={group} onOpen={handleOpen(group.items[0])} />
           ))}
         </div>
       )}

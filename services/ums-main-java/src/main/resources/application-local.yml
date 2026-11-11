@@ -14,7 +14,7 @@ spring:
 ums:
   ai:
     enabled: ${UMS_AI_ENABLED:true}
-    api-key: ${UMS_AI_API_KEY:}          # 本地可留空，功能自动降级
+    api-key: ${UMS_AI_API_KEY:9e3b495236444c79b60596367f54eedc.xq6e6CmcqEuE7TBA}          # 本地可留空，功能自动降级
 
   security:
     jwt:
@@ -47,14 +47,19 @@ ums:
     password: ${UMS_MGMT_PASSWORD:1eAODIRLqpRazsxV}
 
   jingcai:
-    enabled: false
-    app-key: ""
-    app-secret: ""
-    agent-id: ""
-    receivers: ""
-    card-link: ""
+    enabled: true
+    app-key: "dinggifxmjftbgbmhv3m"
+    app-secret: "4ypqFxOLV2gG3wXozv-VkJmrhOJURnyu0FTiR8OBtvqfPN3eBkDEtiFI0nYOyiE1"                # 走环境变量，不入库（本地调试：export UMS_JINGCAI_APP_SECRET=<完整Secret>）
+    agent-id: "5099743148"
+    receivers: "971880798"                 # TODO：接收人钉钉 userid，逗号分隔
+    card-link: "${UMS_JINGCAI_CARDLINK:http://10.21.13.77/supply-chain}"   # 卡片跳转地址，生产用环境变量覆盖
+
 
   xxl-job:
+    # 执行器注册地址：本机多网卡（VPN utun）时自动探测地址对本地调度中心不可达，固定回环
+    ip: 127.0.0.1
+    # 执行器日志目录：macOS 无法在只读根目录创建 /data/applogs，落到用户目录
+    log-path: ${user.home}/logs/ums-xxl-job
     enabled: true
     admin-addresses: http://127.0.0.1:8081/xxl-job-admin
     access-token: default_token

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
@@ -90,9 +90,20 @@ export function SourcesPage() {
       message.success(`触发成功：抓取 ${summary.fetched ?? '-'} 条 / 入库 ${summary.published ?? '-'} 条`);
       invalidate();
     },
-    onError: () =>
-      message.error('触发失败：采集服务未启动或该信源当前不可抓取（详见任务记录）'),
+    onError: () => {
+      message.warning('采集服务处理较慢或不可达，状态将在后台更新（详见任务记录）');
+      // 慢源同步响应超时后抓取仍在后台进行，立即刷新以显示“运行中”
+      invalidate();
+    },
   });
+
+  // 有信源处于“运行中”时每 5 秒自动轮询，保证采集状态实时同步到页面
+  const hasRunning = (table.query.data ?? []).some((s) => s.crawlStatus === 'Running');
+  useEffect(() => {
+    if (!hasRunning) return;
+    const timer = setInterval(() => table.query.refetch(), 5000);
+    return () => clearInterval(timer);
+  }, [hasRunning, table.query]);
 
   const openEdit = (record: Source) => {
     setEditing(record);

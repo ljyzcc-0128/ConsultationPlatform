@@ -1,0 +1,44 @@
+# CN-03 国际储能网（in-en.com 储能频道）
+# 勘察结论（2026-11-10）：移动端入口 mchuneng.in-en.com 静态可读，但标准 UA 会
+# 请求超时，改用常规浏览器 UA（可识别、非伪装）。四个栏目列表页在桌面域：
+#   储能政策 /policy/、电化学储能 /ees/、储能材料 /ees/cailiao/、储能项目 /xiangmu/
+# 列表项为 li > div.listTxt > h5 > a，文章 URL 形如
+# https://chuneng.in-en.com/html/chunengy-NNNNN.shtml；列表与详情均为静态 HTML。
+# 详情正文在 div.leftBox > div.fix，标题 div.leftBox h1，日期在 p.source
+# （"日期：2026-11-10" 格式）。站点偶发连接中断，依赖框架重试机制。
+source_code: CN-03
+source_name: 国际储能网
+fetch_method: WEB
+entry_urls:
+  - https://chuneng.in-en.com/policy/
+  - https://chuneng.in-en.com/ees/
+  - https://chuneng.in-en.com/ees/cailiao/
+  - https://chuneng.in-en.com/xiangmu/
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 50
+request_interval_sec: 3
+request_timeout_sec: 40
+
+list_item_selector: 'li'
+detail_link_selector: 'a[href*="chuneng.in-en.com/html/"]::attr(href)'
+title_selector: 'h5 a::text'
+exclude_link_patterns:
+  - '/api/'
+  - 'javascript'
+
+title_selectors:
+  - 'div.leftBox h1::text'
+body_selectors:
+  - 'div.leftBox div.rightDetail div.conTextBox ::text'
+  - 'div.leftBox div.fix ::text'
+  - 'div.leftBox ::text'
+date_selectors:
+  - 'p.source ::text'
+date_fallback_regex: '日期[:：]\s*([0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2})'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+  Accept-Language: 'zh-CN,zh;q=0.9'

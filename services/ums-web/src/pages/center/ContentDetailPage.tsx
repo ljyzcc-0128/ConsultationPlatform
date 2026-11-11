@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -17,6 +18,42 @@ import { EVENT_TYPE_TEXT, RELEVANCE_TEXT } from '../../api/types';
 import type { RelatedContent, TimelineEvent } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
+
+/** 政策状态中文展示与配色（DRAFT/PUBLISHED/IN_FORCE/AMENDED/NON_POLICY） */
+const POLICY_STATUS_TEXT: Record<string, string> = {
+  DRAFT: '征求意见/草案',
+  PUBLISHED: '已发布',
+  IN_FORCE: '已生效',
+  AMENDED: '修订',
+  NON_POLICY: '非政策资讯',
+};
+const POLICY_STATUS_COLOR: Record<string, string> = {
+  DRAFT: 'gold',
+  PUBLISHED: 'blue',
+  IN_FORCE: 'green',
+  AMENDED: 'purple',
+  NON_POLICY: 'default',
+};
+/** 相关性配色（HIGH/MEDIUM/LOW），key 转宽松索引避免与 RelatedContent.relevance 的窄类型冲突 */
+const RELEVANCE_COLOR: Record<string, string> = {
+  HIGH: 'orange',
+  MEDIUM: 'blue',
+  LOW: 'default',
+};
+const RELEVANCE_LABEL: Record<string, string> = { ...RELEVANCE_TEXT };
+
+/** 发布机构 JSON 数组文本解析（["国家能源局","国家发改委"] → ['国家能源局','国家发改委']），解析失败容错为空 */
+function parseIssuingAuthority(raw?: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === 'string' && x.trim() !== '')
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 export function ContentDetailPage() {
   const { contentId } = useParams<{ contentId: string }>();
@@ -68,6 +105,8 @@ export function ContentDetailPage() {
   }
 
   const hasOriginal = Boolean(data.originalUrl);
+  /** 发布机构 JSON 数组文本解析（["国家能源局","国家发改委"] → ['国家能源局','国家发改委']），解析失败容错为空 */
+  const issuingAuthorities = parseIssuingAuthority(data.analysis?.issuingAuthority);
   // 事件时间线按 detectedAt 升序（IC-006）
   const events = [...(timeline?.events ?? [])].sort((a, b) =>
     a.detectedAt.localeCompare(b.detectedAt),
@@ -94,9 +133,9 @@ export function ContentDetailPage() {
             <Tag>{data.language === 'en' ? 'English' : '中文'}</Tag>
             {data.duplicateGroupId && <Tag color="orange">疑似重复</Tag>}
           </div>
-          {data.category.length > 0 && (
+          {(data.category ?? []).length > 0 && (
             <div className="meta">
-              {data.category.map((c) => (
+              {(data.category ?? []).map((c) => (
                 <Tag key={c} color="blue">
                   {c}
                 </Tag>
@@ -136,6 +175,80 @@ export function ContentDetailPage() {
             type="info"
             showIcon
             message="以上摘要由 AI 自动生成，可能与原文存在偏差，重要决策请以原文为准。"
+          />
+        </div>
+      )}
+
+      {/* 政策与影响分析（AI 加工，说明书政策扩展字段） */}
+      {data.analysis && (
+        <div className="detail-section ai-summary">
+          <h3>政策与影响分析</h3>
+          <table className="analysis-table">
+            <tbody>
+              {data.analysis.policyName && (
+                <tr>
+                  <th>政策名称</th>
+                  <td>{data.analysis.policyName}</td>
+                </tr>
+              )}
+              {issuingAuthorities.length > 0 && (
+                <tr>
+                  <th>发布机构</th>
+                  <td>{issuingAuthorities.join('、')}</td>
+                </tr>
+              )}
+              {data.analysis.policyStatus && (
+                <tr>
+                  <th>政策状态</th>
+                  <td>
+                    <Tag color={POLICY_STATUS_COLOR[data.analysis.policyStatus] ?? 'default'}>
+                      {POLICY_STATUS_TEXT[data.analysis.policyStatus] ?? data.analysis.policyStatus}
+                    </Tag>
+                  </td>
+                </tr>
+              )}
+              {data.analysis.effectiveDate && (
+                <tr>
+                  <th>生效日期</th>
+                  <td>{data.analysis.effectiveDate}</td>
+                </tr>
+              )}
+              {data.analysis.bessRelevance && (
+                <tr>
+                  <th>储能行业相关性</th>
+                  <td>
+                    <Tag color={RELEVANCE_COLOR[data.analysis.bessRelevance] ?? 'default'}>
+                      {RELEVANCE_LABEL[data.analysis.bessRelevance] ?? data.analysis.bessRelevance}
+                    </Tag>
+                  </td>
+                </tr>
+              )}
+              {data.analysis.jinkoEssRelevance && (
+                <tr>
+                  <th>晶科储能相关性</th>
+                  <td>
+                    <Tag color={RELEVANCE_COLOR[data.analysis.jinkoEssRelevance] ?? 'default'}>
+                      {RELEVANCE_LABEL[data.analysis.jinkoEssRelevance] ?? data.analysis.jinkoEssRelevance}
+                    </Tag>
+                  </td>
+                </tr>
+              )}
+              {data.analysis.importanceScore != null && (
+                <tr>
+                  <th>行业重要性</th>
+                  <td>
+                    <Tag color={data.analysis.importanceScore >= 8 ? 'orange' : 'default'}>
+                      {data.analysis.importanceScore} / 10
+                    </Tag>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <Alert
+            type="info"
+            showIcon
+            message="以上分析由 AI 自动生成，可能与原文存在偏差，重要决策请以原文为准。"
           />
         </div>
       )}

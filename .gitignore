@@ -215,3 +215,19 @@ scripts/
 .git/daily-push.log
 .git/daily-push-day
 /var/folders/
+
+# 部署敏感文件与离线安装包（本地保留，不入库）
+app.env
+deploy/mysql-init/01-users.sql
+docker-packages/
+gitlab-packages/
+gitlab-packages.tar.gz
+docker-offline-rpms/
+docker-offline-rpms.tar.gz
+mchuneng_*.html
+smm_*.html
+services/ums-crawler-py/crawler-src.tar.gz
+services/ums-crawler-py/packages.zip
+services/ums-crawler-py/packages/
+services/ums-web/dist.zip
+services/ums-main-java/src/main/java/com/example/ums/supplychain/test.java

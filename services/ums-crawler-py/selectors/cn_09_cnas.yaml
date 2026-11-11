@@ -1,0 +1,37 @@
+# CN-09 CNAS（中国合格评定国家认可委员会）
+# 勘察结论（2026-11-10）：重点栏目为「最新通知 /zxzx/zxtz/」与「认可公告
+# /zxzx/rkgg/」，但栏目列表页内容为 JS 异步装载（静态仅约 7KB 无文章链接）；
+# 而官网首页静态 HTML 中聚合了上述栏目的最新文章块（li > a[href*="/art/"] +
+# span 日期），文章 URL 形如 /zxzx/zxtz/art/2026/art_*.html，故以首页为静态
+# 单入口抓取。详情页：标题 div.content_title span，日期 span.fbdate，
+# 正文 div.gyj_text（部分通知正文为 PDF 附件，正文仅附件名时保持原文并待审）。
+# 属低频变更监测型信源：日抓首页列表，Java 侧按 URL 去重，有更新才入库。
+source_code: CN-09
+source_name: CNAS
+fetch_method: WEB
+entry_url: https://www.cnas.org.cn/
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'li'
+detail_link_selector: 'a[href*="/art/"]::attr(href)'
+title_selector: 'a[href*="/art/"]::text'
+list_date_selector: 'span::text'
+exclude_link_patterns:
+  - 'javascript'
+
+title_selectors:
+  - 'div.content_title span::text'
+body_selectors:
+  - 'div.gyj_text ::text'
+date_selectors:
+  - 'span.fbdate::text'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'
+  Accept-Language: 'zh-CN,zh;q=0.9'

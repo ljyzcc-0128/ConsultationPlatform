@@ -44,6 +44,10 @@ public class SecurityConfig {
                 .requestMatchers("/internal/**").permitAll()
                 .requestMatchers("/api/me/**").authenticated()
                 .requestMatchers("/api/v1/supply-chain/**").authenticated()
+                // 错误转发端点必须放行：控制器抛 500 时 Spring Boot 以 ERROR dispatch 转发到 /error，
+                // 此时 JWT 过滤器不再执行、安全上下文为空，若拦截会导致 500 错误以 401 返回，
+                // 前端收到 401 就会误清登录态（表现为“报错直接退出登录”）
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(new JwtAuthFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(e -> e

@@ -337,6 +337,42 @@ body.theme-cool {
   color: var(--ink);
 }
 
+/* 卡片信源标题行：我的情报/情报中心统一样式（绿色方块+品牌色加粗信源名） */
+.feed-src {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand);
+  margin: 0 0 10px 0;
+  letter-spacing: 0.2px;
+}
+
+.feed-src::before,
+.source-card .source-head .src::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--brand);
+  flex: none;
+}
+
+.source-card .source-head .src {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand);
+  letter-spacing: 0.2px;
+}
+
+.feed-meta .src {
+  display: none;
+}
+
 .feed-summary {
   font-size: 13.5px;
   line-height: 1.65;
@@ -355,6 +391,64 @@ body.theme-cool {
   gap: 10px;
   flex-wrap: wrap;
   color: var(--muted);
+}
+
+/* 情报中心信源视图卡片 */
+.source-card .source-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.source-card .src-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.back-link {
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-link:hover {
+  color: var(--accent, #1677ff);
+}
+
+/* 详情页政策与影响分析表格 */
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.analysis-table th {
+  text-align: left;
+  width: 130px;
+  padding: 8px 10px;
+  color: var(--muted, #6b7280);
+  font-weight: 500;
+  vertical-align: top;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.analysis-table td {
+  padding: 8px 10px;
+  color: var(--ink, #1f2937);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.analysis-table tr:last-child th,
+.analysis-table tr:last-child td {
+  border-bottom: none;
 }
 
 /* 中心页卡片内子元素 */

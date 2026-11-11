@@ -2,8 +2,10 @@ package com.example.ums.content.service;
 
 import com.example.ums.content.dto.NewsDetailDto;
 import com.example.ums.content.dto.NewsPageDto;
+import com.example.ums.content.dto.SourceLatestDto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 内容查询服务（对外 REST 的业务层）。
@@ -23,6 +25,9 @@ public interface NewsQueryService {
      */
     NewsPageDto listTimeline(String cursor, int limit, String sourceId, String category,
                              String language, LocalDate dateFrom, LocalDate dateTo);
+
+    /** 信源视图：每个信源最新一条资讯 + 入库总数（按 publish_date DESC 排序，无发布日期的信源排末尾） */
+    List<SourceLatestDto> listSourceLatest();
 
     /** 详情（主表 + 正文 + 政策分析）；不存在返回 null */
     NewsDetailDto getDetail(String articleId);

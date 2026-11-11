@@ -125,10 +125,13 @@ SMM_DAILY_MAX_ROLLBACK_DAYS = 3  # SMM 每日指标非交易日回溯天数（�
 
 async def run_smm_collection(trade_date: date | None = None,
                              metrics: list[str] | None = None,
+                             period: str | None = None,
                              trigger_type: str = 'MANUAL',
                              publisher: QuotePublisher | None = None) -> dict:
     """执行一次 SMM 采集：登录态构建（cookie 注入优先）→ 逐指标抓取 → 发布 MQ。
 
+    period（daily/weekly/monthly）按指标官网更新周期过滤，配合调度侧拆分的
+    日/周/月任务实现「跟随官网更新频率」；缺省采集全部指标。
     登录失败不 crash：task 摘要标记 failed 并写明原因，同时发布空 entries 消息
     （Java 侧落 FAILED 采集任务日志，与 gfex「全失败也发布」口径一致）。
     返回 {task_id, fetched, published, failed, errors, ...}（HTTP 触发响应口径）。
@@ -136,6 +139,8 @@ async def run_smm_collection(trade_date: date | None = None,
     task_id = uuid.uuid4().hex
     started = datetime.now(timezone.utc)
     wanted = [m.strip() for m in (metrics or list(METRICS)) if m.strip() in METRICS]
+    if period:
+        wanted = [m for m in wanted if METRICS[m].get('period') == period]
     target = trade_date or parse_trade_date(None)
 
     entries, errors = [], []

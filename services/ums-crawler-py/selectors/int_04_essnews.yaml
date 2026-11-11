@@ -1,0 +1,44 @@
+# INT-04 ESS News（pv magazine 集团旗下储能媒体）
+# 勘察结论（2026-11-10）：WordPress/pvmagazine 主题，政策栏目页静态可读；
+# 列表项为 a.post-block__title（每页约 16 条），文章 URL 形如 /2026/11/09/<slug>/；
+# robots.txt 允许全站抓取但 Crawl-delay: 10，故 request_interval_sec=10 遵守限流；
+# 详情正文在 div.entry-content，发布时间/作者在 meta 标签。站内内容本身即储能主题，
+# 无需额外正文相关性过滤。
+source_code: INT-04
+source_name: ESS News
+fetch_method: WEB
+entry_url: https://www.ess-news.com/category/markets/policy/
+language: en
+pagination: true
+max_pages: 2
+max_items: 40
+request_interval_sec: 10
+request_timeout_sec: 20
+
+list_item_selector: 'a.post-block__title'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+exclude_link_patterns:
+  - '/category/'
+  - '/tag/'
+  - '/author'
+  - 'wp-content'
+  - 'wp-json'
+  - '/feed'
+  - '/page/'
+next_page_selectors:
+  - 'a.next.page-numbers::attr(href)'
+  - 'a.next::attr(href)'
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div.entry-content ::text'
+date_selectors:
+  - 'meta[property="article:published_time"]::attr(content)'
+  - 'time::attr(datetime)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

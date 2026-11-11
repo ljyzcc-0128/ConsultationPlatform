@@ -1,0 +1,41 @@
+# CN-07 海博思创（HyperStrong，官网新闻）
+# 勘察结论（2026-11-10）：官网为 JS 渲染站点，静态 HTML 中无文章链接，
+# 必须 js_render: true（列表与详情均渲染）。新闻三栏目：
+#   公司新闻 /news/company-news、展会活动 /news/exhibition-events、
+#   行业洞察 /news/industry-insights；
+# 文章 URL 形如 /news/company-news/NNN。列表项 a 带 title 属性可取标题；
+# 详情 h1.std_title3 为标题，div.ncti_time_year 为日期（"28/08/2026" 日/月/年，
+# dateparser 可解析），正文容器 div.newdet_cont_bt_cont。
+# 属低频变更监测型信源：日抓列表页，Java 侧按 URL 去重，有更新才入库。
+source_code: CN-07
+source_name: 海博思创
+fetch_method: WEB
+entry_urls:
+  - https://www.hyperstrong.com/news/company-news
+  - https://www.hyperstrong.com/news/exhibition-events
+  - https://www.hyperstrong.com/news/industry-insights
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 45
+js_render: true
+render_wait_sec: 8  # 日期块 ncti_time_year 由前端异步挂载，需等待
+
+list_item_selector: 'a[href*="/news/company-news/"], a[href*="/news/exhibition-events/"], a[href*="/news/industry-insights/"]'
+detail_link_selector: 'a::attr(href)'
+exclude_link_patterns:
+  - 'javascript'
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div.newdet_cont_bt_cont ::text'
+date_selectors:
+  - 'div.nulr_cont_time ::text'   # 详情页发布日期（2026-10-23 格式）
+  - 'div.ncti_time_year ::text'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

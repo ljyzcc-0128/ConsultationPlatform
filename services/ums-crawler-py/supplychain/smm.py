@@ -3,10 +3,13 @@
 接口契约（2026-11 实测探测）：
 - 历史报价/库存表 GET {base}/history2/data_table?type={type}&start_time=yyyy-MM-dd&end_time=yyyy-MM-dd[&tableIDs=...]
 - 未登录请求被重定向到登录 HTML 页（非 JSON）→ 以响应 Content-Type 判定登录态失效
-- ⚠ 登录墙：账号自动登录大概率被验证码/前端加密拦截，主路径是用户在浏览器登录
-  hq.smm.cn 后导出会话 cookie（F12 → Network → 复制 Cookie 请求头）填入环境变量
-  SMM_COOKIE（格式 "k1=v1; k2=v2"）。响应结构需在拿到有效 cookie 后核对一次，
-  本模块按候选字段名动态匹配解析（对齐 gfex.py 的 FIELDS 防改名范式），raw 全量上送。
+- 会话凭据三路（优先级从高到低）：
+  1) SMM_COOKIE：浏览器登录后导出的会话 cookie（主路径）
+  2) API 两步认证：POST user.smm.cn/api/usercenter/post_auth（账号密码+设备指纹 →
+     pre_auth_token）→ POST platform.smm.cn/usercenter/5.0/refresh_token_with_device
+     （pre_auth_token+设备参数 → 正式 auth_token）；auth_token 同时注入 Cookie
+     （smm_token 键）与 Authorization 请求头，cookie 键名待真实账号验证
+  3) 认证失败/未配置仅告警降级，不阻塞采集链路
 
 指标清单（用户需求）：铜/铝现货均价；钢材 SPA-H/Q235B/镀锌板/冷轧板/热轧板 周/月均价；
 电池级碳酸锂价格；SMM 社会面碳酸锂库存；碳酸锂盐厂排产。
@@ -17,6 +20,9 @@ from dataclasses import dataclass
 from datetime import date as date_cls, timedelta
 
 import httpx
+
+from settings import (SMM_AUTH_URL, SMM_CLIENT_IP, SMM_CLIENT_UA, SMM_DEVICE_ID,
+                      SMM_DEVICE_NO, SMM_OA, SMM_REFRESH_URL, SMM_SCREEN, SMM_UA)
 
 from supplychain.publisher import QuoteEntry
 
@@ -80,34 +86,135 @@ def _parse_table_ids(raw: str) -> dict:
     return mapping
 
 
+# 认证配置项清单（全部走环境变量，缺失时报清晰告警）
+_AUTH_ENV_KEYS = ('SMM_DEVICE_ID', 'SMM_DEVICE_NO', 'SMM_CLIENT_IP', 'SMM_OA',
+                  'SMM_UA', 'SMM_SCREEN', 'SMM_CLIENT_UA')
+
+
+def _mask(v: str) -> str:
+    """敏感字段脱敏：仅保留前 4 位，避免 token/凭据泄露到日志"""
+    v = str(v or '')
+    return v[:4] + '****' if len(v) > 4 else '****'
+
+
+def _log_http(resp: httpx.Response, sent_data: dict | None = None) -> None:
+    """打印 SMM 网站请求/响应执行日志：完整 URL、请求头（脱敏）、请求体、响应体（截断）"""
+    try:
+        req = resp.request
+        log.info('[smm-http] >>> %s %s', req.method, req.url)
+        hdrs = {k: (_mask(v) if k.lower() in ('cookie', 'authorization') else v)
+                for k, v in req.headers.items()}
+        log.info('[smm-http] >>> 请求头: %s', hdrs)
+        if sent_data is not None:
+            log.info('[smm-http] >>> 请求体: %s', sent_data)
+        body = resp.text[:500]
+        log.info('[smm-http] <<< 响应 HTTP %s content-type=%s body=%s',
+                 resp.status_code, resp.headers.get('content-type', ''), body)
+    except Exception as exc:  # 日志打印自身失败不影响采集
+        log.warning('[smm-http] 日志打印异常: %s', exc)
+
+
+async def _api_login(client: httpx.AsyncClient, username: str, password: str,
+                     warnings: list) -> dict | None:
+    """SMM API 两步认证：post_auth 取 pre_auth_token → refresh_token_with_device 换
+    正式 auth_token。成功返回注入 auth_token 的请求头 dict；失败仅追加告警不抛异常
+    （不阻塞采集链路）。每次采集现取现用，不做跨进程缓存，规避 token 过期问题。"""
+    log.info('[smm-auth] 开始 API 两步认证（user=%s, password=%s）',
+             _mask(username), _mask(password))
+    missing = [k for k, v in zip(_AUTH_ENV_KEYS,
+                                 (SMM_DEVICE_ID, SMM_DEVICE_NO, SMM_CLIENT_IP, SMM_OA,
+                                  SMM_UA, SMM_SCREEN, SMM_CLIENT_UA)) if not v]
+    if missing:
+        msg = ('SMM API 认证浏览器/设备指纹配置不完整，缺少环境变量: '
+               + ','.join(missing))
+        log.warning('[smm-auth] %s', msg)
+        warnings.append(msg)
+        return None
+    log.info('[smm-auth] 认证配置：device_id=%s device_no=%s ip=%s oa=%s screen=%s '
+             'client_ua=%s ua=%s',
+             _mask(SMM_DEVICE_ID), _mask(SMM_DEVICE_NO), SMM_CLIENT_IP, SMM_OA,
+             SMM_SCREEN, SMM_CLIENT_UA, SMM_UA)
+    headers = {'User-Agent': SMM_UA,
+               'Accept': 'application/json, text/plain, */*',
+               'Origin': 'https://user.smm.cn',
+               'Referer': 'https://user.smm.cn'}
+    login_data = {
+        'user_name': username,
+        'password': password,
+        'source': 'web',
+        'source_link': 'https://data-pro.smm.cn/report',
+        'user_agent': SMM_CLIENT_UA,
+        'oa': SMM_OA,
+        'ip': SMM_CLIENT_IP,
+        'device_id': SMM_DEVICE_ID,
+    }
+    try:
+        log.info('[smm-auth] 步骤1/2 POST %s', SMM_AUTH_URL)
+        resp = await client.post(SMM_AUTH_URL, data=login_data, headers=headers)
+        _log_http(resp, sent_data={**login_data, 'password': _mask(password),
+                                   'user_name': _mask(username)})
+        resp.raise_for_status()
+        pre_token = (resp.json().get('data') or {}).get('token')
+        if not pre_token:
+            msg = f'SMM 登录响应未含 pre_auth_token: {resp.text[:200]}'
+            log.warning('[smm-auth] %s', msg)
+            warnings.append(msg)
+            return None
+        log.info('[smm-auth] 步骤1/2 成功 pre_auth_token=%s', _mask(pre_token))
+    except Exception as exc:
+        msg = f'SMM 登录失败: {str(exc)[:200]}'
+        log.warning('[smm-auth] %s', msg)
+        warnings.append(msg)
+        return None
+
+    refresh_data = {
+        'device_no': SMM_DEVICE_NO,
+        'ua': SMM_UA,
+        'screen': SMM_SCREEN,
+        'oa': SMM_OA,
+        'device_id': SMM_DEVICE_ID,
+        'auth_token': pre_token,
+    }
+    try:
+        log.info('[smm-auth] 步骤2/2 POST %s', SMM_REFRESH_URL)
+        resp = await client.post(SMM_REFRESH_URL, data=refresh_data, headers=headers)
+        _log_http(resp, sent_data={**refresh_data, 'auth_token': _mask(pre_token)})
+        resp.raise_for_status()
+        auth_token = (resp.json().get('data') or {}).get('token')
+        if not auth_token:
+            msg = f'SMM 刷新响应未含 auth_token: {resp.text[:200]}'
+            log.warning('[smm-auth] %s', msg)
+            warnings.append(msg)
+            return None
+    except Exception as exc:
+        msg = f'SMM 刷新 token 失败: {str(exc)[:200]}'
+        log.warning('[smm-auth] %s', msg)
+        warnings.append(msg)
+        return None
+
+    log.info('[smm-auth] 两步认证成功 auth_token=%s，已注入 Cookie/Authorization',
+             _mask(auth_token))
+    # auth_token 同时注入 Cookie 与 Authorization 请求头（cookie 键名 smm_token 待真实账号验证）
+    return {'Cookie': f'smm_token={auth_token}', 'Authorization': auth_token}
+
+
 async def build_session(client: httpx.AsyncClient,
                         username: str, password: str, cookie: str) -> SmmSession:
-    """构建 SMM 会话：cookie 注入优先；否则账号密码自动登录（大概率被验证码拦截，失败仅告警）"""
+    """构建 SMM 会话：cookie 注入优先；否则账号密码走 API 两步认证；失败仅告警降级"""
     warnings = []
     if cookie.strip():
+        log.info('[smm-auth] 使用 SMM_COOKIE 注入会话（cookie=%s）', _mask(cookie))
         return SmmSession(headers={'Cookie': cookie.strip()}, warnings=warnings)
 
     if username and password:
-        try:
-            # SMM 账号中心登录（user.smm.cn）；若站点启用验证码/JS 加密则此路不通
-            resp = await client.post(
-                'https://user.smm.cn/login',
-                data={'username': username, 'password': password},
-                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-                                       'AppleWebKit/537.36', 'Referer': 'https://user.smm.cn/'},
-            )
-            resp.raise_for_status()
-            session_cookie = resp.headers.get('set-cookie', '')
-            if session_cookie:
-                return SmmSession(headers={'Cookie': session_cookie}, warnings=warnings)
-            warnings.append('SMM 自动登录未返回会话 cookie（站点可能有验证码），'
-                            '请改用 SMM_COOKIE 注入')
-        except Exception as exc:
-            warnings.append(f'SMM 自动登录失败: {str(exc)[:200]}（站点可能有验证码/前端加密），'
-                            '请改用 SMM_COOKIE 注入')
+        headers = await _api_login(client, username, password, warnings)
+        if headers:
+            return SmmSession(headers=headers, warnings=warnings)
     else:
-        warnings.append('未配置 SMM_COOKIE/SMM_USERNAME，请在浏览器登录 hq.smm.cn 后'
-                        '导出 cookie 填入 SMM_COOKIE 环境变量')
+        msg = ('未配置 SMM_COOKIE/SMM_USERNAME，请在浏览器登录 hq.smm.cn 后'
+               '导出 cookie 填入 SMM_COOKIE 环境变量')
+        log.warning('[smm-auth] %s', msg)
+        warnings.append(msg)
     return SmmSession(headers={}, warnings=warnings)
 
 
@@ -204,9 +311,11 @@ async def fetch_metric(client: httpx.AsyncClient, session: SmmSession, base_url:
                                                    'AppleWebKit/537.36',
                                      'Referer': base_url.rstrip('/') + '/history2',
                                      'X-Requested-With': 'XMLHttpRequest'})
+    _log_http(resp, sent_data={'query_params': params})
     resp.raise_for_status()
     content_type = resp.headers.get('content-type', '')
     if 'json' not in content_type.lower():
         # 未登录/cookie 失效时站点返回登录页 HTML（302 跟随后 200）
-        raise SmmLoginError('接口返回非 JSON（登录态失效），请更新 SMM_COOKIE')
+        raise SmmLoginError('接口返回非 JSON（登录态失效），请更新 SMM_COOKIE 或检查 '
+                            'SMM_USERNAME/SMM_PASSWORD 及设备指纹配置')
     return parse_data_table(resp.json(), metric_code, metric, target)

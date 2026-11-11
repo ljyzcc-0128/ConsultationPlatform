@@ -1,0 +1,36 @@
+# INT-07 DOE（美国能源部新闻室）
+# 勘察结论（2026-11-10）：Drupal 架构。/newsroom 静态页仅暴露约 4 篇（其余经
+# AJAX "Load more" 装载），改用静态列表页 /listings/energy-news（views-row 17 行，
+# 含 time[datetime] 日期）。文章标题链接带 hreflang="en" 且指向 /articles/<slug>；
+# robots.txt 允许 /articles/。详情正文容器为段落字段 div.field--name-field-text
+# （注意：div.field--name-body 是右侧"Funding Opportunities"推广块，勿用）。
+source_code: INT-07
+source_name: DOE
+fetch_method: WEB
+entry_url: https://www.energy.gov/listings/energy-news
+language: en
+pagination: false
+max_pages: 1
+max_items: 30
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'div.views-row'
+detail_link_selector: 'a[hreflang="en"]::attr(href)'
+title_selector: 'a[hreflang="en"]::text'
+list_date_selector: 'time::attr(datetime)'
+exclude_link_patterns:
+  - '/search'
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div.field--name-field-text ::text'
+  - 'div.usa-layout-docs__main ::text'
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

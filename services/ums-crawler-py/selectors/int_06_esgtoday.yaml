@@ -1,0 +1,44 @@
+# INT-06 ESG Today（ESG/可持续资讯，含储能与能源转型报道）
+# 勘察结论（2026-11-10）：WordPress 站，静态可读；列表项为 article > h2 > a
+# （分类页每页约 18 条），文章 URL 为顶级 /<slug>/；robots.txt 对非列名爬虫
+# 仅禁 /wp-admin、feed 与搜索页，UMSBot 合规；详情正文 div.entry-content
+# （正文 p 均在主文章 article 内，底部相关文章的 entry-content 不含 <p>），
+# 发布时间 time[datetime] / meta article:published_time，作者 meta[name=author]。
+source_code: INT-06
+source_name: ESG Today
+fetch_method: WEB
+entry_url: https://www.esgtoday.com/category/esg-news/
+language: en
+pagination: true
+max_pages: 1
+max_items: 40
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'article'
+detail_link_selector: 'h2 a::attr(href)'
+title_selector: 'h2 a::text'
+exclude_link_patterns:
+  - '/category/'
+  - '/tag/'
+  - '/author'
+  - '/feed'
+  - '/about'
+  - 'wp-content'
+next_page_selectors:
+  - 'a[rel="next"]::attr(href)'
+
+title_selectors:
+  - 'h1.post-title ::text'
+  - 'h1 ::text'
+body_selectors:
+  - 'article.post div.entry-content p ::text'
+  - 'article.post div.entry-content ::text'
+date_selectors:
+  - 'meta[property="article:published_time"]::attr(content)'
+  - 'time::attr(datetime)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

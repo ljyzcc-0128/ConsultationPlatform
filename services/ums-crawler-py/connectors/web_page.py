@@ -76,6 +76,10 @@ class WebPageConnector(Connector):
             resp.raise_for_status()
             return resp.text
 
+    def _make_client(self) -> httpx.AsyncClient:
+        """verify_ssl=false 供证书过期站点使用（如数字储能网，仅信任问题非安全问题）"""
+        return httpx.AsyncClient(verify=self.cfg.get('verify_ssl', True))
+
     async def _get_rendered(self, url: str, headers: dict) -> str:
         """JS 渲染页面：Playwright 获取渲染后 HTML（一期仅明确需要时启用）"""
         try:
@@ -91,6 +95,11 @@ class WebPageConnector(Connector):
                     page = await browser.new_page(user_agent=headers.get('User-Agent'))
                     await page.goto(url, wait_until='domcontentloaded',
                                     timeout=self.cfg.get('request_timeout_sec', 20) * 1000)
+                    # XHR 异步装载的 SPA（如时代储能网/presscorner）需要额外等待期，
+                    # render_wait_sec 缺省 0 保持既有 js_render 信源行为不变
+                    wait_sec = self.cfg.get('render_wait_sec', 0)
+                    if wait_sec:
+                        await page.wait_for_timeout(int(float(wait_sec) * 1000))
                     return await page.content()
                 finally:
                     await browser.close()
@@ -100,20 +109,24 @@ class WebPageConnector(Connector):
         refs: list[ItemRef] = []
         seen: set[str] = set()
         max_items = self.cfg.get('max_items', 200)
-        async with httpx.AsyncClient() as client:
-            page_url: str | None = self.cfg['entry_url']
-            for _page in range(self.cfg.get('max_pages', 1)):
-                if not page_url:
-                    break
-                html = await self._get(client, page_url)
-                new_refs = self._parse_list_html(html, page_url)
-                fresh = [r for r in new_refs if r.detail_url not in seen]
-                refs.extend(fresh)
-                seen.update(r.detail_url for r in fresh)
-                page_url = self._next_page_url(Selector(text=html), page_url) \
-                    if self.cfg.get('pagination') else None
-                if len(refs) >= max_items:
-                    break
+        # 多栏目支持：entry_urls 列表逐栏目抓取并全局去重；缺省回退单 entry_url
+        entry_urls: list[str] = self.cfg.get('entry_urls') or [self.cfg['entry_url']]
+        per_column_limit = max(self.cfg.get('max_pages', 1), 1)
+        async with self._make_client() as client:
+            for entry in entry_urls:
+                page_url: str | None = entry
+                for _page in range(per_column_limit):
+                    if not page_url:
+                        break
+                    html = await self._get(client, page_url)
+                    new_refs = self._parse_list_html(html, page_url)
+                    fresh = [r for r in new_refs if r.detail_url not in seen]
+                    refs.extend(fresh)
+                    seen.update(r.detail_url for r in fresh)
+                    page_url = self._next_page_url(Selector(text=html), page_url) \
+                        if self.cfg.get('pagination') else None
+                    if len(refs) >= max_items:
+                        return refs[:max_items]
         return refs[:max_items]
 
     def _parse_list_html(self, html: str, page_url: str) -> list[ItemRef]:
@@ -161,7 +174,7 @@ class WebPageConnector(Connector):
 
     # ---------- 详情页 ----------
     async def fetch_detail(self, ref: ItemRef) -> RawItemDraft:
-        async with httpx.AsyncClient() as client:
+        async with self._make_client() as client:
             html = await self._get(client, ref.detail_url)
         draft = self._parse_detail_html(html, ref.detail_url)
         if draft.title is None:
@@ -171,6 +184,12 @@ class WebPageConnector(Connector):
     def _parse_detail_html(self, html: str, url: str) -> RawItemDraft:
         """纯解析逻辑（不发请求），供黄金样本回归测试使用（手册6.2节）"""
         sel = Selector(text=html)
+        # ::text 会把 <script>/<style> 内的内联代码当文本节点抓进来（如国际储能网
+        # 评论区 JS、统计脚本），先整棵剔除再提取正文
+        for bad in sel.root.xpath('//script | //style | //noscript'):
+            parent = bad.getparent()
+            if parent is not None:
+                parent.remove(bad)
         title = _clean_text(self._extract_with_fallback(sel, self.cfg.get('title_selectors', [])))
         body = _clean_text(self._extract_with_fallback(sel, self.cfg.get('body_selectors', []), join_all=True))
         if not body:
@@ -202,7 +221,9 @@ class WebPageConnector(Connector):
                     parts = [t.strip() for t in sel.css(css_expr).getall() if t and t.strip()]
                     result = '\n'.join(parts) if parts else None
                 else:
-                    result = sel.css(css_expr).get()
+                    # ::text 可能命中首个纯空白文本节点（前端缩进），取第一个非空白节点
+                    nodes = sel.css(css_expr).getall()
+                    result = next((t for t in nodes if t and t.strip()), None)
             except Exception as exc:
                 log.debug('选择器执行失败 %s: %s', css_expr, exc)
                 continue

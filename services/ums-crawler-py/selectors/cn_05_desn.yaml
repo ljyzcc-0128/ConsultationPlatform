@@ -1,0 +1,39 @@
+# CN-05 数字储能网
+# 勘察结论（2026-11-10）：SSL 证书过期（浏览器与 httpx 均报证书错误），
+# 已配 verify_ssl: false（仅信任链过期问题，非内容劫持）。勘察时
+# https://www.desn.com.cn/index.html 返回 503"数字储能网升级维护中"占位页；
+# http 入口 302 至 www.escn.com.cn（CN-01 已覆盖该站）。站点恢复后需重新
+# 勘察确认真实列表结构并复检下方预置选择器（按该站历史经典版式预置）。
+source_code: CN-05
+source_name: 数字储能网
+fetch_method: WEB
+entry_url: https://www.desn.com.cn/index.html
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 30
+request_interval_sec: 3
+request_timeout_sec: 20
+verify_ssl: false
+
+list_item_selector: 'div.newsList li, div.list li, ul.list li'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+exclude_link_patterns:
+  - 'escn\.com\.cn'
+  - 'javascript'
+
+title_selectors:
+  - 'h1::text'
+  - '.title::text'
+body_selectors:
+  - 'div.content ::text'
+  - 'div.article ::text'
+date_selectors:
+  - 'span.time::text'
+  - 'div.info ::text'
+date_fallback_regex: '发布时间[:：]?\s*([0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2})'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

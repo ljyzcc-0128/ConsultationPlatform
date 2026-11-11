@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.ums.content.dto.NewsDetailDto;
 import com.example.ums.content.dto.NewsListItemDto;
 import com.example.ums.content.dto.NewsPageDto;
+import com.example.ums.content.dto.SourceLatestDto;
 import com.example.ums.content.service.NewsQueryService;
 import com.example.ums.content.util.CursorCodec;
 import com.example.ums.processing.mapper.NewsAnalysisMapper;
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,6 +79,17 @@ public class NewsQueryServiceImpl implements NewsQueryService {
     }
 
     @Override
+    public List<SourceLatestDto> listSourceLatest() {
+        Map<String, Long> counts = newsMapper.selectSourceCounts().stream()
+                .collect(Collectors.toMap(
+                        m -> (String) m.get("sourceId"),
+                        m -> ((Number) m.get("cnt")).longValue()));
+        return newsMapper.selectLatestPerSource().stream()
+                .map(n -> new SourceLatestDto(toListItem(n), counts.getOrDefault(n.getSourceId(), 0L)))
+                .toList();
+    }
+
+    @Override
     public NewsDetailDto getDetail(String articleId) {
         CpNews news = newsMapper.selectById(articleId);
         if (news == null) {
@@ -86,6 +100,7 @@ public class NewsQueryServiceImpl implements NewsQueryService {
         NewsListItemDto base = toListItem(news);
         NewsDetailDto.AnalysisDto analysisDto = analysis != null
                 ? new NewsDetailDto.AnalysisDto(analysis.getPolicyStatus(), analysis.getPolicyName(),
+                        analysis.getIssuingAuthority(),
                         analysis.getEffectiveDate(), analysis.getBessRelevance(),
                         analysis.getJinkoEssRelevance(), analysis.getImportanceScore())
                 : null;

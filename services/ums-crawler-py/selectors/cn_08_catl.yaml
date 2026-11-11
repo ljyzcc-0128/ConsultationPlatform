@@ -1,0 +1,38 @@
+# CN-08 宁德时代 CATL（官网新闻）
+# 勘察结论（2026-11-10）：新闻列表 https://www.catl.com/news/ 静态可读，
+# 列表项 li.mc_e1_li（每页 9 条），文章 URL /news/NNNNN.html；
+# robots.txt 返回 200 的 404 占位 HTML（无有效规则，按允许处理）。
+# 详情 h1.mc_e3s1_title 为标题、div.mc_e3s1_date 为日期、正文在
+# div.mc_e3s1b_txtbox（纯静态详情页）。分页 /news/index_2.html 存在，
+# 监测型单页足够。属低频变更监测型信源：日抓列表页，Java 侧按 URL 去重，
+# 有更新才入库。
+source_code: CN-08
+source_name: CATL
+fetch_method: WEB
+entry_url: https://www.catl.com/news/
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'li.mc_e1_li'
+detail_link_selector: 'a.mc_e1_lisbox::attr(href)'
+title_selector: 'p.mc_e1_txt::text'
+list_date_selector: 'div.mc_e1_date::text'
+exclude_link_patterns:
+  - '/en/'
+  - 'javascript'
+
+title_selectors:
+  - 'h1.mc_e3s1_title::text'
+body_selectors:
+  - 'div.mc_e3s1b_txtbox ::text'
+date_selectors:
+  - 'div.mc_e3s1_date::text'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'
+  Accept-Language: 'zh-CN,zh;q=0.9'

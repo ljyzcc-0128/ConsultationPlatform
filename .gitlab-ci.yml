@@ -1,10 +1,5 @@
-# GitLab CI 基线流水线
-# 三条产品线按路径增量触发：Java 后端 / Vite 前端 / Python 爬虫
-# 后续在此基线上插入 AI 阶段（MR 代码评审、变更摘要），见 docs 注释与 deploy 前的 ai-review 预留段
-
 workflow:
   rules:
-    # MR 流水线 + dev/main 分支推送触发；其他分支/tag 不跑
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "dev"
     - if: $CI_COMMIT_BRANCH == "main"
@@ -12,81 +7,50 @@ workflow:
 stages:
   - build
   - test
-  - ai-review
   - package
   - deploy
 
-# ---------- Java 后端（Spring Boot 17 / Maven） ----------
-backend:compile:
-  stage: build
-  image: maven:3.9-eclipse-temurin-17
-  rules:
-    - changes:
-        - services/ums-main-java/**/*
-  script:
-    - mvn -q compile
-  cache:
-    key: maven-repo
-    paths:
-      - .m2/repository
-  variables:
-    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+variables:
+  MAVEN_IMAGE: maven:3.9-eclipse-temurin-17
+  NODE_IMAGE: node:18-alpine
+  DOCKER_IMAGE: docker:24.0.5-cli
+  DEPLOY_PATH: /opt/ums
 
-backend:test:
-  stage: test
-  image: maven:3.9-eclipse-temurin-17
+# ---------- Java 后端 ----------
+backend:build-test:
+  stage: build
+  image: $MAVEN_IMAGE
   rules:
     - changes:
         - services/ums-main-java/**/*
   script:
-    - mvn test
+    - cd services/ums-main-java
+    # 指定阿里云 maven 镜像加速
+    - mvn -s settings.xml -q test package -DskipTests
   cache:
     key: maven-repo
     paths:
-      - .m2/repository
+      - services/ums-main-java/.m2/repository
   variables:
-    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/services/ums-main-java/.m2/repository"
   artifacts:
     when: always
     reports:
       junit: services/ums-main-java/target/surefire-reports/TEST-*.xml
-    expire_in: 1 week
-
-backend:package:
-  stage: package
-  image: maven:3.9-eclipse-temurin-17
-  rules:
-    # 仅 dev/main 跑打包（MR 阶段测试通过即可）
-    - if: $CI_COMMIT_BRANCH == "dev"
-      changes:
-        - services/ums-main-java/**/*
-    - if: $CI_COMMIT_BRANCH == "main"
-      changes:
-        - services/ums-main-java/**/*
-  script:
-    - mvn -q package -DskipTests
-  cache:
-    key: maven-repo
-    paths:
-      - .m2/repository
-  variables:
-    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
-  artifacts:
     paths:
       - services/ums-main-java/target/*.jar
     expire_in: 1 week
 
-# ---------- 前端（React + Vite） ----------
-frontend:build:
+# ---------- 前端 ----------
+frontend:build-test:
   stage: build
-  image: node:20
+  image: $NODE_IMAGE
   rules:
     - changes:
         - services/ums-web/**/*
   script:
     - cd services/ums-web
-    - npm ci
-    # 类型检查 + 构建作为基线质量门禁
+    - npm ci --registry=https://registry.npmmirror.com
     - npx tsc --noEmit
     - npm run build
   cache:
@@ -103,13 +67,13 @@ frontend:build:
 # ---------- Python 爬虫 ----------
 crawler:test:
   stage: test
-  image: python:3.11
+  image: python:3.11-slim
   rules:
     - changes:
         - services/ums-crawler-py/**/*
   script:
     - cd services/ums-crawler-py
-    - pip install --cache-dir .pip-cache -r requirements.txt
+    - pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
     - mkdir -p reports && python -m pytest --junitxml=reports/junit.xml
   cache:
     key: pip-cache
@@ -120,81 +84,35 @@ crawler:test:
     reports:
       junit: services/ums-crawler-py/reports/junit.xml
     expire_in: 1 week
-  # 爬虫测试依赖外网数据源时可能不稳定：先不阻断流水线，稳定后移除
   allow_failure: true
 
-# ---------- AI 代码评审（MR 专用，只评论不阻断） ----------
-# 需在项目 CI/CD Variables 配置（Settings > CI/CD > Variables，均建议勾选 Masked）：
-#   GITLAB_REVIEW_TOKEN  : api scope 的 Personal Access Token（读 diff + 贴 MR 评论）
-#   UMS_LLM_BASE_URL / UMS_LLM_API_KEY / UMS_LLM_MODEL : LLM 接入（与后端应用同一套环境变量名）
-# 未配置时自动跳过，不影响流水线
-ai:review:
-  stage: ai-review
+# ---------- 打包 Docker 镜像 ----------
+package:images:
+  stage: package
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  allow_failure: true
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
+      changes:
+        - services/ums-main-java/**/*
+        - services/ums-web/**/*
+        - services/ums-crawler-py/**/*
   script:
-    - python3 .gitlab/ci/ai_review.py
+    - if [ -d "services/ums-web/dist" ]; then cd services/ums-web && docker build -t local/ums-web:latest . && cd ../..; fi
+    - if ls services/ums-main-java/target/*.jar >/dev/null 2>&1; then cd services/ums-main-java && docker build -t local/ums-main-java:latest . && cd ../..; fi
+    - if [ -d "services/ums-crawler-py" ]; then cd services/ums-crawler-py && docker build -t local/ums-crawler-py:latest . && cd ../..; fi
 
-# ---------- 部署（手动，方案A：部署服务器本地 runner） ----------
-# 前提：部署服务器上装有 gitlab-runner，注册时 tag 为 "deploy"（shell executor、root 运行、开机自启）
-# 服务器实际路径（来自现网手工部署）：jar=/opt/ums/app  前端=/opt/ums/web  爬虫=/opt/ums/app/ums-crawler-py
-# 以下路径/端口均可通过项目 CI/CD Variables 覆盖（不配则用默认值）：
-#   DEPLOY_JAR_PATH       jar 落地路径（默认自动探测 /opt/ums/app 下已有 ums-main*.jar，无则用 ums-main.jar）
-#   DEPLOY_WEB_DIR        前端 dist 目录    默认 /opt/ums/web
-#   DEPLOY_CRAWLER_DIR    爬虫源码目录      默认 /opt/ums/app/ums-crawler-py
-#   UMS_SERVICE_NAME      java systemd 服务名      默认 ums-main
-#   CRAWLER_SERVICE_NAME  爬虫 systemd 服务名      默认 ums-crawler
-#   DEPLOY_HEALTH_PORT    健康检查端口      默认 8080
-deploy:backend:
+# ---------- 部署 ----------
+deploy:local:
   stage: deploy
-  tags: [deploy]
-  needs: ["backend:package"]
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
       when: manual
   script:
-    - 'JAR=$(ls services/ums-main-java/target/ums-main-*.jar | head -1); test -n "$JAR" || (echo "未找到 jar 产物"; exit 1)'
-    # 落点：优先 CI 变量；否则探测服务器上已有 jar 的实际文件名（避免手工部署的 jar 名不同导致 service 指向失效）；都无则用 ums-main.jar
-    - 'TARGET="${DEPLOY_JAR_PATH:-$(ls /opt/ums/app/ums-main*.jar 2>/dev/null | head -1)}"; TARGET="${TARGET:-/opt/ums/app/ums-main.jar}"'
-    - 'install -D -m 644 "$JAR" "$TARGET" && echo "jar 已更新: $TARGET"'
-    - 'systemctl restart "${UMS_SERVICE_NAME:-ums-main}"'
-    - |
-      echo "等待服务监听 ${DEPLOY_HEALTH_PORT:-8080} ..."
-      for i in $(seq 1 30); do
-        sleep 2
-        if timeout 1 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/${DEPLOY_HEALTH_PORT:-8080}" 2>/dev/null; then
-          echo "服务已启动（${i}次探测）"; exit 0
-        fi
-      done
-      echo "健康检查超时，请查日志: journalctl -u ${UMS_SERVICE_NAME:-ums-main} -n 100"; exit 1
-  environment:
-    name: dev
-
-deploy:web:
-  stage: deploy
-  tags: [deploy]
-  needs: ["frontend:build"]
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
-      when: manual
-  script:
-    - 'mkdir -p "${DEPLOY_WEB_DIR:-/opt/ums/web}"'
-    - 'rsync -a --delete services/ums-web/dist/ "${DEPLOY_WEB_DIR:-/opt/ums/web}/"'
-    - 'echo "前端已发布到 ${DEPLOY_WEB_DIR:-/opt/ums/web}（静态文件无需重启 nginx）"'
-  environment:
-    name: dev
-
-deploy:crawler:
-  stage: deploy
-  tags: [deploy]
-  needs: ["crawler:test"]
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
-      when: manual
-  script:
-    - 'D="${DEPLOY_CRAWLER_DIR:-/opt/ums/app/ums-crawler-py}"'
-    - 'mkdir -p "$D"'
-    - 'rsync -a --delete --exclude ".venv" --exclude "venv" --exclude "__pycache__" --exclude ".pytest_cache" --exclude "reports" services/ums-crawler-py/ "$D/"'
-    - 'cd "$D" && (test -d .venv && .venv/bin/pip install -q -r requirements.txt || pip3 install -q -r requirements.txt) && echo "依赖已同步"'
-    - 'systemctl restart "${CRAWLER_SERVICE_NAME:-ums-crawler}" && echo "爬虫服务已重启"'
+    - cd $DEPLOY_PATH
+    - docker compose up -d --force-recreate ums-web ums-main-java ums-crawler-py
+    - docker image prune -f

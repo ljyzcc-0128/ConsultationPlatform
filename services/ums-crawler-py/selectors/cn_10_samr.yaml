@@ -1,0 +1,39 @@
+# CN-10 SAMR 全国标准信息公共服务平台（国家标准动态）
+# 勘察结论（2026-11-10）：国家标准列表页 https://std.samr.gov.cn/gb/gbOpinion
+# 为纯 JS 应用（列表数据经 /gb/search/gbQueryPage XHR 装载，静态 HTML 无数据），
+# 必须 js_render: true。渲染后列表为 tbody > tr 表格行：
+#   td1 序号 / td2 标准号链接 / td3 标准名称 / td4 发布日期 / td5 实施日期 / td6 状态；
+# 详情链接 /gb/search/gbDetailed?id=XXX（业务参数，normalize_url 保留），
+# 详情页同为 JS 渲染，标准名称在 h4，信息主体在 div.col-sm-12。
+# 属低频变更监测型信源：日抓列表页，Java 侧按 URL 去重，有更新才入库。
+source_code: CN-10
+source_name: SAMR标准平台
+fetch_method: WEB
+entry_url: https://std.samr.gov.cn/gb/gbOpinion
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 45
+js_render: true
+render_wait_sec: 8  # 列表数据经 gbQueryPage XHR 装载，需等待渲染期
+
+list_item_selector: 'tbody tr'
+detail_link_selector: 'a[href*="gbDetailed"]::attr(href)'
+title_selector: 'td:nth-child(3)::text'
+list_date_selector: 'td:nth-child(4)::text'
+exclude_link_patterns:
+  - 'javascript'
+
+title_selectors:
+  - 'h4::text'
+body_selectors:
+  - 'div.basic-info ::text'  # 标准号/日期/归口单位/起草单位等元信息块（外层 col-sm-12 含全站导航，勿用）
+date_selectors: []
+date_fallback_regex: '(20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2})'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'
+  Accept-Language: 'zh-CN,zh;q=0.9'

@@ -34,6 +34,12 @@ public class SubscriptionController {
         return subscriptionService.listByUser(currentUserId());
     }
 
+    /** 关注对象候选：按订阅类型分组的系统内可选对象。 */
+    @GetMapping("/options")
+    public Map<String, List<String>> options() {
+        return subscriptionService.listOptions();
+    }
+
     /** 创建订阅规则。 */
     @PostMapping
     public ResponseEntity<SubscriptionDto> create(@RequestBody SubscriptionCreateRequest req) {

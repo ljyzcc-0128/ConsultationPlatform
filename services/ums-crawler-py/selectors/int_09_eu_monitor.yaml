@@ -1,0 +1,49 @@
+# INT-09 欧盟法规监测（European Union 官网新闻与公告聚合）
+# 勘察结论（2026-11-10）：european-union.europa.eu 主页与 featured-news 子页
+# 静态可读；新闻条目标题链接统一带 data-ecl-title-link 属性，指向两类跨域
+# 详情：ec.europa.eu/commission/presscorner/detail/en/ip_*（Angular SPA，
+# 静态 HTML 无内容，须 js_render）与 commission.europa.eu/news-and-media/news/*
+# （Drupal 静态）。js_render: true 同时作用于列表与详情（列表多渲染一次，
+# 开销可接受）。详情页无标准 <time>/meta 日期，发布时间暂缺失（待审口径），
+# h1 为标题、.ecl-content-block__description 为正文块（含引用段）。
+# robots.txt 已确认三类域名均允许抓取目标路径。跨域链接 normalize_url
+# 保持绝对 URL 原样。属低频变更监测型信源：日抓列表，Java 侧按 URL 去重，
+# 有更新才入库。
+source_code: INT-09
+source_name: 欧盟法规监测
+fetch_method: WEB
+entry_urls:
+  - https://european-union.europa.eu/news-and-events_en
+  - https://european-union.europa.eu/news-and-events/featured-news_en
+language: en
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 45
+js_render: true
+render_wait_sec: 6  # presscorner 详情为 Angular SPA，domcontentloaded 后需等待挂载
+
+list_item_selector: 'a[data-ecl-title-link][href*="presscorner"], a[data-ecl-title-link][href*="commission.europa.eu/news-and-media/news"]'
+detail_link_selector: 'a::attr(href)'
+exclude_link_patterns:
+  - '/events/'
+  - '/agendas'
+  - 'europarl\.europa\.eu'
+
+title_selectors:
+  - 'h1 ::text'   # commission.europa.eu 的 h1 内嵌 span，::text 需取后代节点
+  - 'h1::text'
+  - 'title::text'
+body_selectors:
+  - 'div.ecl-content-block__description ::text'
+  - 'div[class*="field--name-body"] ::text'
+date_selectors:
+  - 'meta[name="Date"]::attr(content)'   # presscorner Angular 页内嵌 <meta name="Date" content="2026-11-06">
+  - 'meta[property="article:published_time"]::attr(content)'
+  - 'time::attr(datetime)'
+  - 'time ::text'   # commission.europa.eu 页 <time> 无 datetime 属性，日期在文本（如 "15 October 2026"）
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

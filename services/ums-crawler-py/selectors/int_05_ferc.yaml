@@ -1,0 +1,35 @@
+# INT-05 FERC（美国联邦能源管理委员会新闻稿）
+# 勘察结论（2026-11-10）：https://www.ferc.gov/news-events/news/news-releases-headlines
+# 实测返回 HTTP 403（官网 WAF 拦截自动化请求）。按规范不得对抗性绕过，须先通过
+# 官方渠道修复访问（IP 白名单/官方数据接口/人工协调）。
+# 本 yaml 按官网公开的 Drupal 标准结构预置选择器（views-row 列表 + h1/time/body），
+# crawl_enabled=0（见 V9 迁移），恢复可访问后需重新勘察并联调。
+source_code: INT-05
+source_name: FERC
+fetch_method: WEB
+entry_url: https://www.ferc.gov/news-events/news/news-releases-headlines
+language: en
+pagination: false
+max_pages: 1
+max_items: 30
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'div.views-row'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+exclude_link_patterns:
+  - '/news-events/events'
+  - '/calendar'
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div[class*="field--name-body"] ::text'
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

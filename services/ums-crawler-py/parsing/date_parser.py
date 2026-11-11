@@ -50,4 +50,7 @@ def parse_publish_time(raw: str | None) -> datetime | None:
         return None
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=CN_TZ)
+    if parsed > datetime.now(timezone.utc) + timedelta(days=1):
+        # 未来日期必为页面噪音（活动日期/相关推荐日期），按缺失口径返回 None，不得入库
+        return None
     return parsed.astimezone(timezone.utc)

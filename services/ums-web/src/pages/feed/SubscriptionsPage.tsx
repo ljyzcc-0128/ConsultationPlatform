@@ -55,6 +55,12 @@ export function SubscriptionsPage() {
     queryFn: () => api.get<never, Subscription[]>('/me/subscriptions'),
   });
 
+  // 关注对象候选：按类型分组的系统内可选对象（与关注类型形成二级联动）
+  const { data: options, isLoading: optionsLoading } = useQuery({
+    queryKey: ['subscription-options'],
+    queryFn: () => api.get<never, Record<string, string[]>>('/me/subscriptions/options'),
+  });
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
 
   const addMutation = useMutation({
@@ -83,6 +89,9 @@ export function SubscriptionsPage() {
   });
 
   const list = data ?? [];
+
+  const watchType = Form.useWatch('type', form);
+  const candidateValues = (watchType && options?.[watchType]) || [];
 
   return (
     <>
@@ -196,7 +205,7 @@ export function SubscriptionsPage() {
           form={form}
           layout="vertical"
           onFinish={(values) => addMutation.mutate(values)}
-          initialValues={{ type: 'KEYWORD', frequency: 'DAILY', channel: 'IN_APP' }}
+          initialValues={{ type: 'COMPANY', frequency: 'DAILY', channel: 'IN_APP' }}
         >
           <Form.Item name="type" label="关注类型" rules={[{ required: true }]}>
             <Select
@@ -204,14 +213,26 @@ export function SubscriptionsPage() {
                 value: t,
                 label: SUBSCRIPTION_TYPE_TEXT[t],
               }))}
+              onChange={() => form.setFieldValue('value', undefined)}
             />
           </Form.Item>
           <Form.Item
             name="value"
             label="关注对象"
-            rules={[{ required: true, message: '请输入关注对象' }]}
+            rules={[{ required: true, message: '请选择或输入关注对象' }]}
           >
-            <Input placeholder="如：钠离子电池 / 宁德时代 / 碳酸锂现货价" />
+            {watchType === 'KEYWORD' ? (
+              <Input placeholder="如：钠离子电池 / 碳酸锂现货价" />
+            ) : (
+              <Select
+                showSearch
+                optionFilterProp="label"
+                loading={optionsLoading}
+                notFoundContent="系统暂无该类型候选对象"
+                options={candidateValues.map((v) => ({ value: v, label: v }))}
+                placeholder={watchType ? '从系统对象中选择' : '请先选择关注类型'}
+              />
+            )}
           </Form.Item>
           <Space size={16} style={{ display: 'flex' }}>
             <Form.Item name="frequency" label="推送频率" style={{ minWidth: 160 }}>

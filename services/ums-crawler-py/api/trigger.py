@@ -23,7 +23,8 @@ class TriggerBody(BaseModel):
 
 class SupplyChainTriggerBody(BaseModel):
     trade_date: str | None = None     # 交易日 yyyy-MM-dd / yyyyMMdd，缺省=今天（非交易日自动回溯）
-    varieties: list[str] | None = None  # 品种代码，缺省=配置全部（lc,si,ps）
+    varieties: list[str] | None = None  # 品种代码，缺省=配置全部（lc,si,ps）；SMM 侧=指标编码清单
+    period: str | None = None         # SMM 指标更新周期过滤：daily/weekly/monthly，缺省=全部指标
     trigger_type: str | None = None   # SCHEDULED/MANUAL，缺省 MANUAL
 
 
@@ -69,6 +70,7 @@ async def trigger_smm(body: SupplyChainTriggerBody | None = None):
         raise HTTPException(status_code=422, detail={'code': 'SC_4221', 'message': str(exc)})
     return await run_smm_collection(trade_date=trade_date,
                                     metrics=body.varieties,
+                                    period=body.period,
                                     trigger_type=body.trigger_type or 'MANUAL')
 
 

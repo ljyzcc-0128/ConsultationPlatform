@@ -1,0 +1,42 @@
+# CN-06 阳光电源（Sungrow，官网新闻）
+# 勘察结论（2026-11-10）：官网根路径 302 至 /en；中文站 /zh 不存在（404），
+# 唯一可用入口为英文站。/en/news-media-news-list 为 Next.js SPA，静态 HTML
+# 无列表内容，必须 js_render: true 渲染并滚动加载；新闻卡片为
+# a.flex.items-start[href^="/en/<slug>"]（内含日期与标题），文章详情也是
+# 同构 SPA（js_render 同时作用于详情）。详情标题取 og:title，发布时间在
+# 页面 JSON-LD 的 datePublished（用 date_fallback_regex 提取），正文段落
+# p.bn-inline-content。属低频变更监测型信源：日抓列表页，Java 侧按 URL 去重，
+# 有更新才入库。
+source_code: CN-06
+source_name: 阳光电源
+fetch_method: WEB
+entry_urls:
+  - https://www.sungrowpower.com/en/news-media-news-list
+language: en
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 45
+js_render: true
+
+list_item_selector: 'a[href^="/en/"][class*="border-t-1"]'
+detail_link_selector: 'a::attr(href)'
+exclude_link_patterns:
+  - '/news-media-news-list'
+  - '/news-media-blogs'
+  - '/case/'
+  - '/search'
+  - 'javascript'
+
+title_selectors:
+  - 'meta[property="og:title"]::attr(content)'
+body_selectors:
+  - 'p.bn-inline-content ::text'
+date_selectors:
+  - 'meta[property="article:published_time"]::attr(content)'
+date_fallback_regex: '"datePublished"\s*:\s*"([^"]+)"'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

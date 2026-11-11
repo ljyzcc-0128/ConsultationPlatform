@@ -1,7 +1,9 @@
 package com.example.ums.content.web;
 
 import com.example.ums.content.dto.NewsDetailDto;
+import com.example.ums.content.dto.NewsListItemDto;
 import com.example.ums.content.dto.NewsPageDto;
+import com.example.ums.content.dto.SourceLatestDto;
 import com.example.ums.content.service.NewsQueryService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 内容查询 REST 接口（对前端/小程序）。
@@ -45,6 +48,15 @@ public class NewsQueryController {
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    /**
+     * 信源视图：每个信源最新一条资讯 + 入库总数。
+     * 契约收口：GET /api/v1/contents/sources-latest 等价同方法。
+     */
+    @GetMapping(path = { "/api/news/sources-latest", "/api/v1/contents/sources-latest" })
+    public List<SourceLatestDto> listSourceLatest() {
+        return newsQueryService.listSourceLatest();
     }
 
     /**

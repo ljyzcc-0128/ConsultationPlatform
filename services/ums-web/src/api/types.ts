@@ -18,6 +18,8 @@ export interface NewsItem {
 export interface NewsAnalysis {
   policyStatus: string | null;
   policyName: string | null;
+  /** 发布机构 JSON 数组文本（如 ["国家能源局"]），原文未提及为 null */
+  issuingAuthority: string | null;
   effectiveDate: string | null;
   bessRelevance: string | null;
   jinkoEssRelevance: string | null;

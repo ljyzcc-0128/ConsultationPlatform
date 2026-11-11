@@ -1,0 +1,43 @@
+# CN-04 时代储能网
+# 勘察结论（2026-11-10）：全站 Vue SPA（eraes.com.cn/sy 首页静态响应仅约 2KB），
+# 必须 js_render: true 由 Playwright 渲染；渲染后内容经 /Json/GetSearchContent.asp
+# XHR 装载，文章链接为 /content-detail?C_ID=xxx&Column_ID=yyy（业务参数，
+# normalize_url 保留）。七个栏目（储能政策/储能技术-锂电池/行业动态/国际储能/
+# 数据统计/电力市场/招中标）均为动态路由无稳定静态 URL，首页聚合展示各栏目
+# 最新内容，故以首页为单一入口抓取。
+# 注意：列表与详情均走 Playwright，单源耗时较长（每页渲染约 10s）；
+# Column_ID 为空的会员/广告链接已通过 exclude_link_patterns 剔除。
+source_code: CN-04
+source_name: 时代储能网
+fetch_method: WEB
+entry_urls:
+  - https://eraes.com.cn/sy
+language: zh-CN
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 3
+request_timeout_sec: 45
+js_render: true
+render_wait_sec: 12  # 首页内容经 GetSearchContent.asp XHR 装载，需等待渲染期
+
+list_item_selector: 'a[href*="content-detail"]'
+detail_link_selector: 'a::attr(href)'
+list_date_selector: 'span::text'
+exclude_link_patterns:
+  - 'Column_ID=$'
+  - 'voosite\.net'
+  - 'javascript'
+
+title_selectors:
+  - 'div.wrap div.title::text'
+  - 'div.content-box div.title::text'
+body_selectors:
+  - 'div.content-box > div.content ::text'  # 正文块（top-box 含标题/日期/分享栏，勿并入）
+date_selectors:
+  - 'div.wrap div.date::text'
+date_fallback_regex: '([0-9]{4}年[0-9]{1,2}月[0-9]{1,2}日)'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

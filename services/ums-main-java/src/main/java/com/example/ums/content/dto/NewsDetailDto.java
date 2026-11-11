@@ -22,10 +22,12 @@ public record NewsDetailDto(
         String body,
         AnalysisDto analysis) {
 
-    /** cp_news_analysis 1:1（政策与影响分析，一期暂空） */
+    /** cp_news_analysis 1:1（政策与影响分析，AI 加工后填充） */
     public record AnalysisDto(
             String policyStatus,
             String policyName,
+            /** 发布机构 JSON 数组文本（如 ["国家能源局"]），原文未提及为 null */
+            String issuingAuthority,
             LocalDate effectiveDate,
             String bessRelevance,
             String jinkoEssRelevance,
