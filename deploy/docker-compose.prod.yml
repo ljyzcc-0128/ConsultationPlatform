@@ -71,7 +71,7 @@ services:
       UMS_AI_ENABLED: "true"
       UMS_AI_BASE_URL: https://open.bigmodel.cn/api/paas/v4
       UMS_AI_MODEL: glm-4-flash
-      UMS_AI_API_KEY: <真实智谱key>    # 上线前必须替换（或移入 .env 引用）
+      # UMS_AI_API_KEY 由 env_file(/opt/ums/app/app.env) 提供，勿在此写占位值覆盖真实 Key
       UMS_CRAWLER_URL: http://ums-crawler-py:8100
       XXL_JOB_ADMIN_ADDRESSES: http://xxl-job-admin:8080/xxl-job-admin
     depends_on:

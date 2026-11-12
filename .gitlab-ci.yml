@@ -113,9 +113,13 @@ deploy:local:
     - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
       when: manual
   script:
-    # UMS_APP_ENV 为 GitLab CI/CD 文件型变量（Settings > CI/CD > Variables）；未配置时沿用服务器已有文件
+    # app.env 实际位于 /opt/ums/configs/app.env；compose env_file 要求 /opt/ums/app/app.env
+    # UMS_APP_ENV（GitLab 文件型变量）若配置则优先覆盖
     - mkdir -p /opt/ums/app
-    - if [ -n "$UMS_APP_ENV" ] && [ -f "$UMS_APP_ENV" ]; then cp -f "$UMS_APP_ENV" /opt/ums/app/app.env; else echo "UMS_APP_ENV 未配置，沿用 /opt/ums/app/app.env 现有文件"; fi
+    - if [ -f /opt/ums/configs/app.env ]; then cp -f /opt/ums/configs/app.env /opt/ums/app/app.env; fi
+    - if [ -n "$UMS_APP_ENV" ] && [ -f "$UMS_APP_ENV" ]; then cp -f "$UMS_APP_ENV" /opt/ums/app/app.env; fi
+    # 仓库 compose 为唯一事实来源，部署前同步到服务器
+    - cp -f deploy/docker-compose.prod.yml /opt/ums/docker-compose.yml
     - cd $DEPLOY_PATH
     - docker compose up -d --force-recreate ums-web ums-main-java ums-crawler-py
     - docker image prune -f
