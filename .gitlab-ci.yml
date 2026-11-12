@@ -111,7 +111,7 @@ deploy:local:
     DOCKER_HOST: unix:///var/run/docker.sock
   rules:
     - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
-      when: manual
+      when: on_success   # 构建打包成功后自动部署；如需回退手动，改回 when: manual
   script:
     # app.env 实际位于 /opt/ums/configs/app.env；compose env_file 要求 /opt/ums/app/app.env
     # UMS_APP_ENV（GitLab 文件型变量）若配置则优先覆盖
