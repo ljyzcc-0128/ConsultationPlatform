@@ -1,0 +1,43 @@
+# INT-18 Baringa（咨询公司洞察，P1）
+# 勘察结论（2026-11-12）：Vue SPA，原始 HTML 只有导航菜单 SSR 输出（div.menu__links 内
+# featured 链接），真实列表 div.listing__results 由客户端渲染（原始 HTML 中
+# div.listing.is-loading 为空容器），必须 js_render（Playwright）。
+# 渲染后列表：div.listing__results > div.card（12 条/页），卡片含 h4 标题与
+# a.solid-arrow-link[href=/en/insights/<分类>/<slug>/]（"Read more"），卡片内无日期。
+# 分页：无 URL 分页（?page=2 静态返回 0 卡片）、无 Load more 链接，仅 Topic/Type 筛选器，
+# 单次渲染 12 条，故 pagination: false。
+# 详情页为 SSR：h1 标题、meta[property=article:published_time]（ISO 时间）、正文
+# div.rich-text__inner（该站能源与资源板块 BESS 相关内容较多，如 LDES/GB 电池储能分析）。
+# 注意：渲染等待期间会弹 TrustArc cookie 横幅，不影响 DOM 解析。
+source_code: INT-18
+source_name: Baringa
+fetch_method: WEB
+entry_url: https://www.baringa.com/en/insights/
+language: en
+pagination: false
+max_pages: 1
+max_items: 12
+request_interval_sec: 5
+request_timeout_sec: 45
+js_render: true          # 列表为 Vue 客户端渲染，原始 HTML 无条目（2026-11-12 实测）
+render_wait_sec: 9       # 渲染等待：约 9s 后 div.listing__results 填充完成
+
+list_item_selector: 'div.listing__results > div.card'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'h4 ::text'
+exclude_link_patterns:
+  - '/en/insights/$'   # 防御：排除栏目本身
+
+title_selectors:
+  - 'h1 ::text'
+  - 'meta[property="og:title"]::attr(content)'
+body_selectors:
+  - 'div.rich-text__inner ::text'
+  - 'main ::text'
+date_selectors:
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'

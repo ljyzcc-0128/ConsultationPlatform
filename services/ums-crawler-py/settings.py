@@ -32,30 +32,39 @@ MQ_ROUTING_KEY_WBILL = os.environ.get('MQ_ROUTING_KEY_WBILL', 'supplychain.wbill
 MQ_ROUTING_KEY_SMM = os.environ.get('MQ_ROUTING_KEY_SMM', 'supplychain.smm.fetched')
 MQ_ROUTING_KEY_SCI99 = os.environ.get('MQ_ROUTING_KEY_SCI99', 'supplychain.sci99.fetched')
 
-# SMM 上海有色网（price.smm.cn/hq.smm.cn）：登录墙后数据服务。
+# SMM 上海有色网（hq.smm.cn/price.smm.cn）：登录墙后数据服务。
+# 登录协议 2026-11-12 逆向自 https://imgqn.smm.cn/static/sign-cn-web-modal/assets/login-B2dGVC4t.js
+# （官方登录 SDK bundle，与浏览器实测验证一致）：
+#   POST https://platform.smm.cn/usercenter/4.0/auth
+#   表单：user_name / password=md5(明文)hex / source=web / device=UUID / oa=01xwb /
+#         source_link / user_agent=chrome/x.y.z.w / ip
+#   成功直接返回 data.token（JWT），同时注入 Cookie: SMM_auth_token={token}
+# 注意：token 会被 refresh_token_with_device 轮换作废 → 每次采集现取现用，禁止跨进程缓存。
 # 会话凭据三路（优先级从高到低）：
 # 1) SMM_COOKIE：浏览器登录后导出会话 cookie（格式 "k1=v1; k2=v2"）
-# 2) SMM_USERNAME/SMM_PASSWORD + 设备指纹：API 两步认证
-#    （post_auth 取 pre_auth_token → refresh_token_with_device 换正式 auth_token）
+# 2) SMM_USERNAME/SMM_PASSWORD：4.0/auth 一步认证（md5 密码）
 # 3) 均未配置/认证失败时仅告警降级，不阻塞采集链路
 SMM_BASE_URL = os.environ.get('SMM_BASE_URL', 'https://hq.smm.cn')
 SMM_USERNAME = os.environ.get('SMM_USERNAME', '')
 SMM_PASSWORD = os.environ.get('SMM_PASSWORD', '')
 SMM_COOKIE = os.environ.get('SMM_COOKIE', '')
-# SMM API 两步认证端点（站点协议地址，改版才会变化）
-SMM_AUTH_URL = os.environ.get('SMM_AUTH_URL', 'https://user.smm.cn/api/usercenter/post_auth')
-SMM_REFRESH_URL = os.environ.get(
-    'SMM_REFRESH_URL', 'https://platform.smm.cn/usercenter/5.0/refresh_token_with_device')
-# 设备指纹与浏览器信息参数（站点风控要素，按本机浏览器实际值通过环境变量注入，禁止写死）：
-# SMM_UA=完整 User-Agent（F12 → Network 任意请求头复制）；SMM_SCREEN=屏幕分辨率；
-# SMM_CLIENT_UA=post_auth 接口的 user_agent 参数（如 chrome/146.0.0.0）
+# 4.0/auth 登录端点与现货结算价数据端点（站点协议地址，改版才会变化）
+SMM_LOGIN_URL = os.environ.get(
+    'SMM_LOGIN_URL', 'https://platform.smm.cn/usercenter/4.0/auth')
+SMM_SETTLEMENT_URL = os.environ.get(
+    'SMM_SETTLEMENT_URL', 'https://platform.smm.cn/spotcenter/v31/settlement/history/prices')
+# 登录风控要素：SMM_OA 为登录 SDK 内置常量（非设备相关，实测固定 01xwb）；
+# SMM_DEVICE_ID=设备 UUID（决定 SMM 的设备绑定计数，务必固定一个值写入环境变量，
+# 容器重启不变；未配置时自动生成一次并持久化到 SMM_DEVICE_FILE）；SMM_CLIENT_UA 为
+# 登录表单 user_agent 参数（浏览器 UA 的简写格式，如 chrome/146.0.0.0）
+SMM_OA = os.environ.get('SMM_OA', '01xwb')
 SMM_DEVICE_ID = os.environ.get('SMM_DEVICE_ID', '')
-SMM_DEVICE_NO = os.environ.get('SMM_DEVICE_NO', '')
+SMM_DEVICE_FILE = os.environ.get('SMM_DEVICE_FILE', '/tmp/smm_device_id')
 SMM_CLIENT_IP = os.environ.get('SMM_CLIENT_IP', '')
-SMM_OA = os.environ.get('SMM_OA', '')
-SMM_UA = os.environ.get('SMM_UA', '')
-SMM_SCREEN = os.environ.get('SMM_SCREEN', '')
-SMM_CLIENT_UA = os.environ.get('SMM_CLIENT_UA', '')
+SMM_UA = os.environ.get(
+    'SMM_UA', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36')
+SMM_CLIENT_UA = os.environ.get('SMM_CLIENT_UA', 'chrome/146.0.0.0')
 # SMM 结算表 tableID 映射（metric_code:tableID 逗号分隔，如 smm-cu-spot:101,smm-al-spot:102）。
 # tableIDs 因账号权限而异，首次运行前需登录 hq.smm.cn/history2 抓包确认后配置
 SMM_TABLE_IDS = os.environ.get('SMM_TABLE_IDS', '')

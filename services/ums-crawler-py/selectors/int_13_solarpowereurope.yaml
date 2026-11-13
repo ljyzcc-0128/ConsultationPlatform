@@ -1,0 +1,47 @@
+# INT-13 SolarPower Europe（P1）
+# 勘察结论（2026-11-12）：Nuxt SPA，列表页（/news、/publications）原始 HTML 仅含
+# window.__NUXT__ 数据载荷与空容器（publications__row），条目由客户端 JS 注入——
+# 静态抓取取不到列表，必须 js_render（Playwright）；详情页是 SSR（h1/正文/日期在静态 HTML 中），
+# 但连接器 js_render 为信源级开关，详情请求也走渲染通道（可接受）。
+# 渲染后列表容器：div.publications__row > div.publication，链接 a.publication__link，
+# 标题 div.publication__title，日期 div.publication__date（"4 November 2026"），单页 20 条。
+# 分页：?page=2 实测返回与第 1 页相同内容（URL 分页参数被站点忽略，前端为 Load more 按钮），
+# 故 pagination: false，单次 20 条（max_items 同步收紧）。
+# 备注：/insights 与 /insights/thematic-reports 均 404；列表同时混有 /press-releases/、/news/、
+# /insights/ 三类详情链接，均为有效内容页，不做排除。
+source_code: INT-13
+source_name: SolarPower Europe
+fetch_method: WEB
+entry_url: https://www.solarpowereurope.org/news
+language: en
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 5
+request_timeout_sec: 45
+js_render: true          # 列表页为 Nuxt 客户端渲染，静态 HTML 无条目（2026-11-12 实测）
+render_wait_sec: 9       # 渲染等待：domcontentloaded 后约 9s 条目全部注入
+
+list_item_selector: 'div.publication'
+detail_link_selector: 'a.publication__link::attr(href)'
+title_selector: 'div.publication__title ::text'
+list_date_selector: 'div.publication__date ::text'
+exclude_link_patterns:
+  - '/search'
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div.c-text-full-width__content ::text'
+  - 'main ::text'
+date_selectors:
+  - 'p.specialTitle__subtitle::text'   # 仅 /news/ 详情页有（如 "27 October 2026"）
+  - 'meta[property="article:published_time"]::attr(content)'
+# 已知限制（2026-11-12 冒烟实测 5 条中 3 条有日期）：/press-releases/ 详情页无任何日期元素
+# （无 specialTitle__subtitle、无 og:article:published_time、无 JSON-LD datePublished），
+# 列表页虽有 div.publication__date 但连接器不把列表日期回填 publish_time，故此类条目日期为 None。
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'

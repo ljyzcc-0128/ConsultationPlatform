@@ -1,0 +1,44 @@
+# INT-12 IEA（国际能源署，P1）
+# 勘察结论（2026-11-12）：自研 Nuxt SSR 架构（服务端渲染，静态抓取可用）。
+# /news 列表项为 <article> > div.m-news-detailed-listing > a.m-news-detailed-listing__link，
+# 标题在 h5.m-news-detailed-listing__title，列表日期在 div.m-news-detailed-listing__date（"10 November 2026"）。
+# 分页为 SSR 查询参数 ?page=N（页面上有 1..78 数字锚），无 rel=next，用 a[href*="page=2"] 取第 2 页
+# （max_pages=2 时仅第 1→2 页跳转，够用）。
+# 备注：/reports 栏目勘察为按钮云列表（ul.m-button-cloud，无日期、无发布时间），
+# 与 news 结构不同且混抓会拉入大量长报告 landing page，故本期只保留 /news 栏目。
+# 详情页：h1 标题、time[datetime] ISO 时间、正文在 div.m-block__content（f-rte 富文本块），无 author 元信息。
+source_code: INT-12
+source_name: IEA (International Energy Agency)
+fetch_method: WEB
+entry_url: https://www.iea.org/news
+language: en
+pagination: true
+max_pages: 2
+max_items: 60
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'article'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'h5 ::text'
+list_date_selector: 'div.m-news-detailed-listing__date ::text'
+exclude_link_patterns:
+  - '/reports/'
+  - '/events/'
+  - '/programmes/'
+next_page_selectors:
+  - 'a[rel="next"]::attr(href)'
+  - 'a[href*="page=2"]::attr(href)'   # SSR 分页无 rel=next，取第 2 页锚
+
+title_selectors:
+  - 'h1::text'
+body_selectors:
+  - 'div.m-block__content ::text'
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

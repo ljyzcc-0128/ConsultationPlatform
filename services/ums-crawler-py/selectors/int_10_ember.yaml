@@ -1,0 +1,53 @@
+# INT-10 Ember（英国能源智库，最新洞察与数据集发布）
+# 勘察结论（2026-11-12）：
+# 1) 直连被 Cloudflare 托管挑战拦截（httpx 与 Playwright 无头均 403"Just a moment"
+#    循环，旧 headless shell 与新 headless 均无法通过指纹校验），故本源走 Wayback
+#    Machine 存档镜像：web.archive.org 为静态 HTML，无需 js_render。
+# 2) 官网 /latest-insights/ 列表本身由 admin-ajax 异步装载，Wayback 不回放 POST，
+#    存档版无列表；而官网首页（Webflow 架构）"Latest content" 区块为静态卡片，
+#    快照频率约每 1~4 天一次，故入口选首页存档。
+# 3) 列表结构：a.card.insight_page 卡片（约 4 条，div.cardtitle 标题、
+#    div.carddate 日期如"05 November 2026"、div.type-tag 类型）与
+#    a.quickfirelink 编号速览（div.quickfirelink-txt 标题、div.carddate.ysr-cd 日期）。
+#    两类 item 合并采集，日期文本经 dateparser(en) 解析。
+# 4) 详情页为存档文章页（/web/<ts>/https://ember-energy.org/latest-insights/<slug>），
+#    WordPress 架构：h1 标题、div.carddate/meta article:published_time 日期、
+#    div.post-content 类正文；Wayback 工具栏与存档导航由 exclude/正文兜底过滤。
+# 5) 遗留风险：列表新鲜度取决于 Internet Archive 对首页的快照频率（约数日一拍，
+#    快照缺档期间列表不更新）；entry_url 用 20991231 前缀使 Wayback 永远解析到
+#    最新快照；详情若个别未存档，Wayback 返回 404 页导致该条正文缺失。
+#    建议：接入 SPN 自动存档或 Cloudflare 策略放宽后切回直连（选择器不变）。
+source_code: INT-10
+source_name: Ember
+fetch_method: WEB
+entry_url: 'https://web.archive.org/web/20991231/https://ember-energy.org/'
+language: en
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 8
+request_timeout_sec: 60
+
+list_item_selector: 'a.card.insight_page, a.quickfirelink'
+detail_link_selector: '::attr(href)'
+title_selector: 'div.cardtitle::text, div.quickfirelink-txt::text'
+list_date_selector: 'div.carddate::text'
+
+title_selectors:
+  - 'h1 ::text'
+  - 'h1::text'
+  - 'meta[property="og:title"]::attr(content)'
+  - 'title::text'
+body_selectors:
+  - 'div.post-content ::text'
+  - 'div.entry-content ::text'
+  - 'article ::text'
+date_selectors:
+  - 'meta[property="article:published_time"]::attr(content)'
+  - 'div.carddate::text'
+  - 'time::attr(datetime)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'

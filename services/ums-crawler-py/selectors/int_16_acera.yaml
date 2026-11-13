@@ -1,0 +1,43 @@
+# INT-16 ACERA（智利可再生能源与储能协会，西语，P1）
+# 勘察结论（2026-11-12）：WordPress（Codezion 主题）SSR 架构，静态抓取可用。
+# 首轮探的 /centro-de-informacion/ 是导航聚合页（无列表容器），真实新闻列表为
+# /noticias/（含 /noticias/page/2..331/ 数字分页，a.next 为下一页锚）。
+# 列表项 div.post > a.cz_grid_link（href=文章 slug 绝对链接，title 属性=完整标题），
+# 列表日期在 div.cz_data_date（西语月份 "Noviembre 2, 2026"——连接器 dateparser 仅配 zh/en，
+# 西语月份解析不了返回 None，属已知限制，详情页 ISO 时间可兜底）。
+# 详情页：h1 标题、time[datetime] ISO 时间（2026-10-20T12:32:29+00:00）、正文 div.cz_post_content。
+# 备注：文章链接为全站根路径 slug（不限 /noticias/ 前缀），勿按路径前缀过滤。
+source_code: INT-16
+source_name: ACERA (Asociación Chilena de Energías Renovables y Almacenamiento)
+fetch_method: WEB
+entry_url: https://www.acera.cl/noticias/
+language: es
+pagination: true
+max_pages: 2
+max_items: 40
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'div.post'
+detail_link_selector: 'a.cz_grid_link::attr(href)'
+title_selector: 'a::attr(title)'
+list_date_selector: 'div.cz_data_date ::text'   # 西语月份，dateparser(zh/en) 解析失败会返回 None，详情页 time 兜底
+exclude_link_patterns:
+  - '/category/'
+  - '/tag/'
+next_page_selectors:
+  - 'a.next::attr(href)'
+
+title_selectors:
+  - 'h1::text'
+  - 'meta[property="og:title"]::attr(content)'
+body_selectors:
+  - 'div.cz_post_content ::text'
+date_selectors:
+  - 'time::attr(datetime)'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

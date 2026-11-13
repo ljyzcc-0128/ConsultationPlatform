@@ -1,0 +1,47 @@
+# INT-17 Energy Storage Europe（EASE/ESE，P1）
+# 勘察结论（2026-11-12）：WordPress + 自定义主题，SSR 静态抓取可用。
+# 四个栏目（activity-reports / policy-papers / reports-and-studies / current-news）共用
+# 同一卡片结构：div.article-card-full，内含 span.-date（"March 2026" 或 "23 October 2026"）、
+# h3.-title 标题、__bottom 内 a[href]（READ MORE → /publication/<slug>/ 或 /news/<slug>/）。
+# 分页为数字分页 div.pager（第 1 个 a 是当前页，第 2 个 a 是下一页），无 rel=next，
+# 用 a:nth-of-type(2) 取下一页。
+# 详情页（news 与 publication 同构）：article > div.__intro > h5 > span 日期（"23.10.2026 / News"
+# 或 "September 2026 / Policy Papers"）、div.__intro-title h1 标题、div.__content 正文。
+# 备注：activity-reports 更新极慢（年更），policy-papers/reports-and-studies 为 BESS 相关
+# 政策文件主力栏目；newsroom/current-news 为动态新闻。
+source_code: INT-17
+source_name: Energy Storage Europe (EASE)
+fetch_method: WEB
+entry_urls:
+  - https://energystorageeurope.eu/newsroom/current-news/
+  - https://energystorageeurope.eu/publications/policy-papers/
+  - https://energystorageeurope.eu/publications/reports-and-studies/
+  - https://energystorageeurope.eu/publications/activity-reports/
+language: en
+pagination: true
+max_pages: 1
+max_items: 30
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'div.article-card-full'
+detail_link_selector: 'a::attr(href)'
+title_selector: '.-title ::text'
+list_date_selector: '.-date ::text'
+exclude_link_patterns:
+  - '/newsroom/press-releases/'   # 非条目内链接，防御性排除
+next_page_selectors:
+  - 'div.pager a:nth-of-type(2)::attr(href)'   # 第 1 个 a 为当前页，第 2 个为下一页
+
+title_selectors:
+  - 'h1 ::text'
+body_selectors:
+  - 'div.__content ::text'
+  - 'article ::text'
+date_selectors: []   # 页面无 meta/time；__intro span 文本（"23.10.2026 / News"）带后缀导致 dateparser 失败，改走 JSON-LD 兜底
+date_fallback_regex: '"datePublished":\s*"([^"]+)"'   # Yoast JSON-LD，2026-11-12 实测三页均命中文章自身日期
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (compatible; UMSBot/1.0; +internal-crawler)'

@@ -1,0 +1,49 @@
+# INT-19 Renewables Now（P1）
+# 勘察结论（2026-11-12）：Next.js SSR 架构，静态抓取可用。
+# 按说明书要求只抓 SECTORS-Energy Storage 板块：https://renewablesnow.com/news/energy-storage/
+# （首页 /news/ 为全行业混合流，BESS 相关占比低且页面大 450KB，不作为入口）。
+# 列表项卡片为 div.d-flex.flex-column（Next.js CSS modules + bootstrap flex 布局，无语义标签）：
+# 链接 a[href=/news/<slug>-<id>/]（主卡在 div.latest-top 内，普通卡 a>h6 标题），
+# 标题 h6（主卡标题为区块头 h6 "Latest top stories"，会把第一条链接的 list_title 标错，
+# 详情页 h1 兜底，影响仅限列表标题提示），日期 span 文本 "Nov 12, 2026"（主卡无日期，详情页 meta 兜底）。
+# 分页：无 URL 分页链接（加载更多为 JS），pagination: false，单次约 30 条。
+# 重要：详情页正文有订阅墙（premium，页面上 "subscribe" 提示多处），免费可见部分仅导语
+# （JSON-LD articleBody 同为导语 199 字符）。按手册口径记录注册墙、不绕过：
+# body_selectors 留空走 trafilatura 兜底取导语，正文完整内容由 Java 端订阅规则/人工渠道补充。
+# BESS 过滤：入口本身就是 Energy Storage 板块，正文级 BESS 过滤由 Java 端订阅规则完成。
+source_code: INT-19
+source_name: Renewables Now
+fetch_method: WEB
+entry_urls:
+  - https://renewablesnow.com/news/energy-storage/
+language: en
+pagination: false
+max_pages: 1
+max_items: 30
+request_interval_sec: 3
+request_timeout_sec: 20
+
+list_item_selector: 'div.d-flex.flex-column:has(> a > h6)'   # 仅命中含"标题锚"的文本卡容器，排除图片锚/导航容器（:has 已实测支持）
+detail_link_selector: 'a::attr(href)'
+title_selector: 'h6 ::text'
+list_date_selector: 'span ::text'   # 卡片日期 "Nov 12, 2026"；主卡无日期返回 None，详情页 meta 兜底
+# 已知限制：页面存在响应式双份渲染（同一文章两份相同 DOM，类名无差异无法用选择器区分），
+# 连接器 fetch_list 只做跨栏目去重、不做页内去重，同页重复 URL 由 Java 端按 original_url 去重兜底。
+exclude_link_patterns:
+  - '/news/(energy-storage|offshore-wind|hydrogen|other-renewables|solar|wind|policy|archive)'   # 板块导航与归档链接
+  - '/news/?$'                                # 首页栏目入口自身
+  - '/news/search-results'                    # 分区筛选页（EUROPE/MENA/USA 等，非文章）
+  - '/(advanced-search|regions|projects|company-news|policy-tenders|insights|events|about|subscription)/?'
+  - '(facebook|linkedin|twitter|x)\.com|seenext\.org'   # 外部社交链接
+
+title_selectors:
+  - 'h1::text'
+  - 'meta[property="og:title"]::attr(content)'
+body_selectors: []   # 详情页正文订阅墙，走 trafilatura 兜底取免费导语（2026-11-12 实测）
+date_selectors:
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'   # 站点屏蔽爬虫 UA（UMSBot 实测 403，2026-11-12）

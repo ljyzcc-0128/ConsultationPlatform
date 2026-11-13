@@ -1,0 +1,53 @@
+# INT-14 Nord Pool（P1，低频监测）
+# 勘察结论（2026-11-12）：Episerver + Alpine.js 架构。新闻/白皮书全部列表页
+# （newsroom/exchange-message-list、newsroom/feature、newsroom/articles）的条目均由
+# XHR/SignalR 注入（NPG_MessagesController、NPG_MessageList），原始 HTML 无条目链接，
+# 静态抓取不可行，必须 js_render。
+# 唯一可用入口：首页渲染后的 "Latest news" 区块（li.message，.message-published 日期文本 +
+# a[href] 链接到 /en/message-center-container/newsroom/exchange-message-list/2026/qN/<slug>/），
+# 实测渲染出 5 条新闻稿；新闻中心主区为季度下拉控件（按季翻页，无 URL 分页），每季仅 1~3 条，
+# 且需 JS 交互才能切换季度，故取首页区块即可覆盖近期新闻稿。
+# 替代线索：新闻稿 RSS（/en/message-center-container/newsroom/exchange-message-list/Rss/，25 条）
+# 与白皮书 RSS（/newsroom/feature/Rss/，21 条）均可用，但 RSS 的 <link> 经连接器 HTML 解析后
+# 变为 void 元素（URL 成 tail 文本），css 选择器取不到 href，故未采用；后续如连接器支持
+# XML/xpath 解析可切换到 RSS（标题/日期/全文 description 齐全）。
+# 排除项：首页渲染出的 li.message 还包含运营消息（/Operational-Message-List/）与
+# UMM 链接（umm.nordpoolgroup.com），均属交易运营噪音，已排除。
+# 白皮书（newsroom/feature/）为单篇展示页非列表，本期不单独配置栏目。
+source_code: INT-14
+source_name: Nord Pool
+fetch_method: WEB
+entry_urls:
+  - https://www.nordpoolgroup.com/en/
+language: en
+pagination: false
+max_pages: 1
+max_items: 20
+request_interval_sec: 5
+request_timeout_sec: 45
+js_render: true          # 全站新闻列表为 Alpine.js/XHR 注入，静态 HTML 无条目（2026-11-12 实测）
+render_wait_sec: 12      # 首页 Latest news 区块约 12s 渲染完成
+
+list_item_selector: 'li.message'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'a::text'
+list_date_selector: 'div.message-published ::text'
+exclude_link_patterns:
+  - 'umm\.nordpoolgroup\.com'          # UMM 紧急市场消息（外链 SPA）
+  - '/Operational-Message-List/'       # 交易运营消息，非新闻
+  - '/events/'
+  - '/About-us/'
+
+title_selectors:
+  - 'h1::text'
+  - 'meta[property="og:title"]::attr(content)'
+body_selectors:
+  - 'div.article-column-inner ::text'
+date_selectors:
+  - 'div.message-published::text'
+  - 'meta[property="article:published_time"]::attr(content)'
+author_selectors:
+  - 'meta[name="author"]::attr(content)'
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'

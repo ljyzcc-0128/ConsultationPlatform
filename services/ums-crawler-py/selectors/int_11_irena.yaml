@@ -1,0 +1,44 @@
+# INT-11 IRENA（国际可再生能源署，Publications 最新出版物列表）
+# 勘察结论（2026-11-12）：Sitecore SPA 架构，服务端 HTML 仅返回 Azure WAF 的
+# "enable JavaScript" 拦截页（httpx 直连 403），必须 js_render: true 渲染；
+# Playwright 无头渲染即可放行（无需额外参数），渲染等待期内列表挂载完成。
+# 列表容器为 div.c-Publication[data-jscomponent="Publication"] 卡片（约 32 张，
+# 页面下方 "Explore further" 区块会重复引用部分卡片，连接器按 URL 全局去重消化）；
+# 标题在卡片内 h3.Heading__text，日期为卡片内 time.c-Publication__date[datetime]
+# （如 2026-11-11，纯 ISO 日期）。详情页为同构 SPA：h1 标题、
+# time.m-TopHeader__date[datetime] 为发布日期（页面首个 time 元素，勿用泛匹配
+# 首位之下的 RelatedContent 日期）、div.m-RichText 为摘要正文、
+# div.m-TopHeader__description 为一句话简介（fallback）。
+# 对比结论：/Newsroom 列表混入 RelatedContent 盒子、/Data 页面为数据门户无稳定
+# 条目列表，均不及 Publications 结构稳定，故选 Publications 作入口。
+source_code: INT-11
+source_name: IRENA
+fetch_method: WEB
+entry_url: https://www.irena.org/Publications
+language: en
+pagination: false
+max_pages: 1
+max_items: 40
+request_interval_sec: 3
+request_timeout_sec: 45
+js_render: true
+render_wait_sec: 15  # 实测列表挂载 7~11s（裸 new_page），15s 留足余量；SPA 无挂载完成事件可监听
+
+list_item_selector: 'div.c-Publication'
+detail_link_selector: 'a::attr(href)'
+title_selector: 'h3::text'
+list_date_selector: 'time::attr(datetime)'
+
+title_selectors:
+  - 'h1 ::text'
+  - 'title::text'
+body_selectors:
+  - 'div.m-RichText ::text'
+  - 'div.m-TopHeader__description ::text'
+date_selectors:
+  - 'time.m-TopHeader__date::attr(datetime)'
+  - 'time::attr(datetime)'
+author_selectors: []
+
+headers:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
